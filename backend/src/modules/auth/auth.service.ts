@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestOtpDto, VerifyOtpDto } from './dto/auth.dto';
 import { Role } from '@prisma/client';
+import { SmsService } from './sms.service';
 
 @Injectable()
 export class AuthService {
