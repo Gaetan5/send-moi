@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Moi — Lien de Confiance Diaspora & Exécution de Missions au Cameroun</title>
+  <meta name="description" content="Plateforme de confiance pour la diaspora camerounaise. Faites surveiller vos chantiers et exécuter vos courses à Douala et Yaoundé avec preuves photos/vidéos horodatées et géolocalisées.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Decorative Glow Effects -->
+  <div class="bg-glow-top"></div>
+  <div class="bg-glow-accent"></div>
+
+  <!-- Navigation Bar -->
+  <header class="navbar" id="main-header">
+    <div class="container nav-container">
+      <a href="index.html" class="logo" id="nav-logo">
+        <div class="logo-badge">SM</div>
+        <span>Send<span class="gradient-text">Moi</span></span>
+      </a>
+
+      <ul class="nav-links" id="nav-menu">
+        <li><a href="index.html" class="nav-link active" id="nav-home">Accueil</a></li>
+        <li><a href="#supervision" class="nav-link" id="nav-supervision">Supervision Chantier</a></li>
+        <li><a href="entreprise.html" class="nav-link" id="nav-entreprise">Offre B2B SaaS</a></li>
+        <li><a href="tarifs.html" class="nav-link" id="nav-tarifs">Tarifs & Frais</a></li>
+        <li><a href="devenir-agent.html" class="nav-link" id="nav-agent">Devenir Agent</a></li>
+        <li><a href="faq.html" class="nav-link" id="nav-faq">Confiance & Sécurité</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="devenir-agent.html" class="btn btn-secondary btn-sm" id="btn-agent-top">Espace Agent</a>
+        <a href="#demo-section" class="btn btn-primary btn-sm" id="btn-launch-demo">Lancer la Démo</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero-section">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge" id="hero-status-badge">
+          <span>🇨🇲 Disponible à Douala & Yaoundé</span>
+        </div>
+        <h1 class="hero-title" id="hero-main-title">
+          Ne transférez plus à l'aveugle.<br>
+          <span class="gradient-text">Voyez chaque franc agissant sur le terrain.</span>
+        </h1>
+        <p class="hero-subtitle" id="hero-description">
+          Selon le Trésor camerounais, la diaspora envoie 650 milliards FCFA par an pour la santé, l'éducation et la construction. <strong>Send Moi</strong> déploie des agents indépendants vérifiés à Douala et Yaoundé pour surveiller vos chantiers et exécuter vos démarches avec <strong>preuves photos et vidéos horodatées</strong>.
+        </p>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <a href="#demo-section" class="btn btn-primary" id="hero-cta-primary">
+            <span>Tester une mission</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="devenir-agent.html" class="btn btn-secondary" id="hero-cta-secondary">
+            <span>Rejoindre notre réseau d'agents</span>
+          </a>
+        </div>
+
+        <div class="hero-stats-row" id="hero-stats">
+          <div class="stat-item" id="stat-escrow">
+            <h4>100% Sécurisé</h4>
+            <p>Paiement sous séquestre jusqu'à validation</p>
+          </div>
+          <div class="stat-item" id="stat-cities">
+            <h4>2 Métropoles</h4>
+            <p>Douala & Yaoundé couvertes H24</p>
+          </div>
+          <div class="stat-item" id="stat-momo">
+            <h4>MoMo & OM</h4>
+            <p>Directement via MTN MoMo et Orange Money</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone Demo Container -->
+      <div class="phone-mockup-wrapper" id="demo-section">
+        <div class="phone-frame" id="interactive-phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header-bar">
+              <span style="font-size: 0.8rem; font-weight: 700; color: #FFF;">Send Moi App</span>
+              <span class="phone-city-badge" id="phone-current-city">Douala — Akwa</span>
+            </div>
+
+            <div class="phone-tab-bar" id="phone-tab-selector">
+              <button class="phone-tab active" data-tab="supervision" id="tab-btn-supervision">Chantier</button>
+              <button class="phone-tab" data-tab="courses" id="tab-btn-courses">Courses</button>
+            </div>
+
+            <!-- Dynamic Mission Card -->
+            <div class="phone-mission-card" id="demo-card-content">
+              <div class="mission-card-header">
+                <span class="mission-cat-tag tag-supervision" id="demo-card-tag">Supervision Chantier</span>
+                <span class="mission-status-pill">
+                  <span class="status-dot"></span> <span id="demo-card-status">Preuve soumise</span>
+                </span>
+              </div>
+              <h4 style="font-size: 0.95rem; color: #FFF;" id="demo-card-title">Inspection Dalle Béton R+1</h4>
+              <p style="font-size: 0.75rem; color: #9CA3AF;" id="demo-card-desc">Contrôle de l'avancement des poteaux et vérification de la livraison de ciment à Makepe.</p>
+
+              <!-- Proof Photo Preview -->
+              <div class="phone-proof-preview" id="demo-proof-box">
+                <img src="assets/chantier_supervision_proof.png" alt="Preuve supervision chantier" class="phone-proof-img" id="demo-proof-img">
+                <div class="gps-overlay" id="demo-gps-info">
+                  <span>📍 4.0511° N, 9.7679° E</span>
+                  <span>⏱️ Aujourd'hui 14:32</span>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid var(--border-glass);">
+                <span style="font-size: 0.75rem; color: #9CA3AF;">Agent: <strong>Samuel K. (Note: 4.9★)</strong></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #4ADE80;" id="demo-card-price">25 000 FCFA</span>
+              </div>
+            </div>
+
+            <!-- Interactive Action Simulator -->
+            <div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+              <label style="font-size: 0.7rem; color: #C4B5FD; display: block; margin-bottom: 0.4rem; font-weight: 600;">Simuler une action en direct :</label>
+              <button class="btn btn-success btn-sm" style="width: 100%; font-size: 0.75rem; padding: 0.4rem;" id="btn-sim-action">
+                <span>Valider la mission & Libérer les fonds</span>
+              </button>
+              <p style="font-size: 0.65rem; color: #9CA3AF; text-align: center; margin-top: 0.3rem;" id="sim-feedback">Paiement actuellement sous séquestre sécurisé</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Services Focus: Supervision & Courses -->
+  <section class="section-padding" id="supervision">
+    <div class="container">
+      <div style="text-align: center; max-width: 700px; margin: 0 auto 3rem;">
+        <span class="hero-badge">Nos 2 Cœurs de Métier MVP</span>
+        <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Conçu pour vos besoins réels au pays</h2>
+        <p style="color: var(--text-muted);">Au lieu d'essayer de tout faire moyennement, Send Moi concentre son infrastructure d'automatisation sur les deux catégories où la preuve visuelle est indispensable.</p>
+      </div>
+
+      <div class="grid-cards">
+        <!-- Supervision Card -->
+        <div class="card" id="card-service-supervision">
+          <div class="card-icon">🏗️</div>
+          <h3 class="card-title">Supervision de Chantier & Immo</h3>
+          <p class="card-desc">
+            Ne laissez plus votre projet immobilier à l'abandon ou au gré de rapports approximatifs. Nos agents qualifiés se rendent sur vos chantiers à Douala ou Yaoundé avec une checklist personnalisée.
+          </p>
+          <ul style="list-style: none; margin-top: 1rem; color: #C4B5FD; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li>✓ Photos & Vidéos horodatées haute définition</li>
+            <li>✓ Validation du nombre de sacs de ciment livrés</li>
+            <li>✓ Relevé des coordonnées GPS exactes du terrain</li>
+          </ul>
+        </div>
+
+        <!-- Courses & Delivery Card -->
+        <div class="card" id="courses">
+          <div class="card-icon">🛍️</div>
+          <h3 class="card-title">Courses, Achats & Livraisons</h3>
+          <p class="card-desc">
+            Achetez des vivres, médicaments ou fournitures scolaires directement pour vos proches restés au Cameroun sans intermédiaires incertains.
+          </p>
+          <ul style="list-style: none; margin-top: 1rem; color: #99F6E4; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li>✓ Achats en marchés ou supermarchés certifiés</li>
+            <li>✓ Photo du reçu de caisse original scanné</li>
+            <li>✓ Remise en main propre avec signature/photo</li>
+          </ul>
+        </div>
+
+        <!-- Escrow Protection Card -->
+        <div class="card" id="card-service-escrow">
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Paiement Sous Séquestre Protégé</h3>
+          <p class="card-desc">
+            Lorsque vous validez une commande sur l'application, vos fonds en Mobile Money sont bloqués sous séquestre sécurisé. L'agent n'est rémunéré qu'une fois la preuve validée par vos soins.
+          </p>
+          <ul style="list-style: none; margin-top: 1rem; color: #FCA5A5; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li>✓ Zéro risque de détournement de fonds</li>
+            <li>✓ Réconciliation directe via MTN MoMo & Orange Money</li>
+            <li>✓ Gestion des litiges assistée sous 24h</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Geographic Focus Section -->
+  <section class="section-padding cities-section" id="cities-focus">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;">
+        <div style="max-width: 550px;">
+          <span class="hero-badge">Couverture Initiale MVP</span>
+          <h2 style="font-size: 2.2rem; margin-top: 0.5rem; margin-bottom: 1rem;">Douala & Yaoundé : Les deux métropoles connectées</h2>
+          <p style="color: var(--text-muted);">
+            Pour garantir un délai d'intervention moyen de moins de 2 heures, nous concentrons nos équipes d'agents certifiés sur les bassins économiques majeurs du Cameroun.
+          </p>
+        </div>
+      </div>
+
+      <div class="city-grid">
+        <div class="city-card" id="city-douala">
+          <div class="city-badge-icon">DLA</div>
+          <div>
+            <h3 style="font-size: 1.25rem; color: #FFF; margin-bottom: 0.4rem;">Douala & Arrondissements</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Akwa, Bonapriso, Makepe, Logbessou, Bonabéri, PK10-PK21. Plus de 120 agents vérifiés prêts à intervenir.</p>
+          </div>
+        </div>
+
+        <div class="city-card" id="city-yaounde">
+          <div class="city-badge-icon" style="background: linear-gradient(135deg, #0D9488, #14B8A6);">YDE</div>
+          <div>
+            <h3 style="font-size: 1.25rem; color: #FFF; margin-bottom: 0.4rem;">Yaoundé & Periphéries</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Bastos, Odza, Jouvence, Mendong, Nsimeyong, Ahala. Réseau d'agents formés pour les démarches et suivis.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section-padding" id="how-it-works">
+    <div class="container">
+      <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+        <h2 style="font-size: 2.2rem; margin-bottom: 0.75rem;">Comment ça marche ?</h2>
+        <p style="color: var(--text-muted);">Un processus fluide en 4 étapes pour un suivi sans faille depuis l'étranger.</p>
+      </div>
+
+      <div class="steps-wrapper">
+        <div class="step-card" id="step-1">
+          <span class="step-number">01</span>
+          <h4 style="font-size: 1.1rem; color: #FFF; margin-bottom: 0.5rem;">Définissez la mission</h4>
+          <p style="font-size: 0.875rem; color: var(--text-muted);">Sélectionnez la catégorie (Chantier ou Courses), la ville et décrivez vos instructions précises.</p>
+        </div>
+
+        <div class="step-card" id="step-2">
+          <span class="step-number">02</span>
+          <h4 style="font-size: 1.1rem; color: #FFF; margin-bottom: 0.5rem;">Payez sous séquestre</h4>
+          <p style="font-size: 0.875rem; color: var(--text-muted);">Vos fonds sont bloqués en toute sécurité via Mobile Money. L'agent est notifié immédiatement.</p>
+        </div>
+
+        <div class="step-card" id="step-3">
+          <span class="step-number">03</span>
+          <h4 style="font-size: 1.1rem; color: #FFF; margin-bottom: 0.5rem;">Exécution & Preuves</h4>
+          <p style="font-size: 0.875rem; color: var(--text-muted);">L'agent se déplace sur le terrain et téléverse des preuves photos/vidéos certifiées avec GPS et heure.</p>
+        </div>
+
+        <div class="step-card" id="step-4">
+          <span class="step-number">04</span>
+          <h4 style="font-size: 1.1rem; color: #FFF; margin-bottom: 0.5rem;">Validation & Libération</h4>
+          <p style="font-size: 0.875rem; color: var(--text-muted);">Vous examinez les preuves. Dès votre confirmation, la rémunération est transférée à l'agent.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" id="main-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="index.html" class="logo" style="margin-bottom: 1rem;">
+            <div class="logo-badge">SM</div>
+            <span>Send<span class="gradient-text">Moi</span></span>
+          </a>
+          <p style="font-size: 0.9rem; color: var(--text-muted); max-width: 320px;">
+            La solution d'intermédiation de confiance pour la diaspora camerounaise. Supervision de chantier et exécution de missions avec preuves certifiées.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h5>Services</h5>
+          <ul class="footer-links">
+            <li><a href="#supervision">Supervision Chantier</a></li>
+            <li><a href="#courses">Courses & Achats</a></li>
+            <li><a href="tarifs.html">Grille Tarifaire</a></li>
+            <li><a href="#cities-focus">Villes couvertes</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Agents & Partenaires</h5>
+          <ul class="footer-links">
+            <li><a href="devenir-agent.html">Devenir Agent</a></li>
+            <li><a href="devenir-agent.html#criteres">Critères de sélection</a></li>
+            <li><a href="devenir-agent.html#gains">Reversements Mobile Money</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Confiance & Légal</h5>
+          <ul class="footer-links">
+            <li><a href="faq.html">FAQ & Sécurité</a></li>
+            <li><a href="cgu-cgv.html">Conditions Générales (CGU/CGV)</a></li>
+            <li><a href="cgu-cgv.html#donnees">Protection des données</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 Send Moi Inc. Tous droits réservés. Déployé à Douala & Yaoundé, Cameroun.</p>
+        <p style="font-size: 0.8rem; color: var(--text-dim);">Paiements sécurisés via MTN Mobile Money & Orange Money</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

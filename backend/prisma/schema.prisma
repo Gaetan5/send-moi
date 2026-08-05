@@ -1,0 +1,222 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CLIENT
+  AGENT
+  ADMIN
+}
+
+enum City {
+  DOUALA
+  YAOUNDE
+}
+
+enum AgentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Category {
+  SUPERVISION
+  COURSES
+  AUTRES
+}
+
+enum MissionStatus {
+  SOUMISE
+  ASSIGNATION_EN_COURS
+  AGENT_ASSIGNE
+  EN_ROUTE
+  EN_COURS_EXECUTION
+  PREUVE_SOUMISE
+  VALIDEE_PAR_CLIENT
+  PAYEE
+  CLOTUREE
+  LITIGE
+  ANNULEE
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  MTN_MOMO
+  ORANGE_MONEY
+}
+
+enum TransactionType {
+  CLIENT_DEBIT
+  AGENT_PAYOUT
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+model User {
+  id            String         @id @default(uuid())
+  phone         String         @unique
+  fullName      String
+  role          Role           @default(CLIENT)
+  city          City           @default(DOUALA)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  agentProfile  AgentProfile?
+  clientMissions Mission[]     @relation("ClientMissions")
+  agentMissions  Mission[]     @relation("AgentMissions")
+  transactions  PaymentTransaction[]
+}
+
+model AgentProfile {
+  id                  String      @id @default(uuid())
+  userId              String      @unique
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cniNumber           String      @unique
+  selfieUrl           String?
+  status              AgentStatus @default(PENDING)
+  rating              Float       @default(5.0)
+  ratingCount         Int         @default(0)
+  activeMissionsCount Int         @default(0)
+  isAvailable         Boolean     @default(true)
+  preferredZones      String[]
+  momoNumber          String?
+  momoProvider        PaymentProvider?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  weeklyPayouts       WeeklyPayout[]
+}
+
+model Mission {
+  id                  String         @id @default(uuid())
+  clientId            String
+  client              User           @relation("ClientMissions", fields: [clientId], references: [id])
+  agentId             String?
+  agent               User?          @relation("AgentMissions", fields: [agentId], references: [id])
+  category            Category
+  city                City
+  status              MissionStatus  @default(SOUMISE)
+  title               String
+  description         String
+  categoryPayload     Json
+  priceAmount         Float
+  commissionRate      Float          @default(0.10) // 10% par défaut
+  fixedFee            Float          @default(0)
+  totalClientPaid     Float
+
+  escrowAccount       EscrowAccount?
+  proofs              MissionProof[]
+  transactions        PaymentTransaction[]
+  review              Review?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model EscrowAccount {
+  id                      String       @id @default(uuid())
+  missionId               String       @unique
+  mission                 Mission      @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  status                  EscrowStatus @default(HELD)
+  amountHeld              Float
+  agentPayoutAmount       Float
+  platformCommissionAmount Float
+  releasedAt              DateTime?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+}
+
+model PaymentTransaction {
+  id            String            @id @default(uuid())
+  missionId     String?
+  mission       Mission?          @relation(fields: [missionId], references: [id])
+  userId        String
+  user          User              @relation(fields: [userId], references: [id])
+  provider      PaymentProvider
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  amount        Float
+  reference     String            @unique
+  rawResponse   Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model MissionProof {
+  id                  String    @id @default(uuid())
+  missionId           String
+  mission             Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  mediaUrl            String
+  mediaType           MediaType @default(PHOTO)
+  latitude            Float
+  longitude           Float
+  capturedAt          DateTime
+  isGpsVerified       Boolean   @default(true)
+  isTimestampVerified Boolean   @default(true)
+  proofSignatureHash  String?   // SHA-256 cryptographic signature
+  createdAt           DateTime  @default(now())
+}
+
+model Organization {
+  id              String         @id @default(uuid())
+  name            String
+  taxId           String?        @unique // NIU / Registre du Commerce
+  city            City           @default(DOUALA)
+  contactEmail    String
+  contactPhone    String
+  subscription    Subscription?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Subscription {
+  id              String       @id @default(uuid())
+  organizationId  String       @unique
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planName        String       @default("ENTERPRISE_PRO")
+  monthlyFee      Float
+  status          String       @default("ACTIVE")
+  startDate       DateTime     @default(now())
+  endDate         DateTime?
+}
+
+model WeeklyPayout {
+  id            String       @id @default(uuid())
+  agentId       String
+  agent         AgentProfile @relation(fields: [agentId], references: [id])
+  weekNumber    Int
+  year          Int
+  totalAmount   Float
+  status        TransactionStatus @default(PENDING)
+  processedAt   DateTime?
+  createdAt     DateTime     @default(now())
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  missionId   String   @unique
+  mission     Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+}

@@ -1,0 +1,20 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build and publish Android release to Google Play Internal Track"
+  lane :beta do
+    sh("flutter", "build", "appbundle", "--release")
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/release/app-release.aab'
+    )
+  end
+end
+
+platform :ios do
+  desc "Build and upload iOS release to Apple TestFlight"
+  lane :beta do
+    build_app(workspace: "Runner.xcworkspace", scheme: "Runner")
+    upload_to_testflight
+  end
+end
