@@ -6,9 +6,17 @@ import { SmsService } from './sms.service';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'send_moi_secret_key_2026',
-      signOptions: { expiresIn: '30d' },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret && process.env.NODE_ENV === 'production') {
+          throw new Error('🔒 SÉCURITÉ : La variable JWT_SECRET est obligatoire en environnement de production !');
+        }
+        return {
+          secret: secret || 'send_moi_dev_secret_key_2026',
+          signOptions: { expiresIn: '30d' },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
