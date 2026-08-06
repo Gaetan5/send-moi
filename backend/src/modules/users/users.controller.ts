@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Patch, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
 import { UsersService, ApplyAgentDto } from './users.service';
-import { AgentStatus } from '@prisma/client';
+import { AgentStatus, Role } from '@prisma/client';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -17,6 +19,8 @@ export class UsersController {
   }
 
   @Patch('agents/:id/status')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async updateAgentStatus(
     @Param('id') id: string,
     @Body('status') status: AgentStatus,

@@ -1,18 +1,7 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Category, City, MissionStatus, EscrowStatus } from '@prisma/client';
-
-export interface CreateMissionDto {
-  clientId: string;
-  category: Category;
-  city: City;
-  title: string;
-  description: string;
-  categoryPayload: any;
-  priceAmount: number; // Base service price
-  fixedFee?: number;   // Configurable operational fee
-  commissionRate?: number; // Configurable commission rate (e.g., 0.10 = 10%)
-}
+import { CreateMissionDto } from './dto/create-mission.dto';
 
 @Injectable()
 export class MissionsService {
@@ -21,18 +10,18 @@ export class MissionsService {
   /**
    * 1. Create Mission & Hold Funds in Escrow (Paid immediately upon order validation)
    */
-  async createAndHoldEscrow(dto: CreateMissionDto) {
-    const commissionRate = dto.commissionRate ?? 0.10; // Default 10%
-    const fixedFee = dto.fixedFee ?? 0;
-    const platformCommission = (dto.priceAmount * commissionRate) + fixedFee;
-    const agentPayoutAmount = dto.priceAmount - (dto.priceAmount * commissionRate);
-    const totalClientPaid = dto.priceAmount + fixedFee;
+  async createAndHoldEscrow(clientId: string, dto: CreateMissionDto) {
+    const commissionRate = 0.10; // Fixed 10% platform commission
+    const fixedFee = 0;           // Fixed operational fee
+    const platformCommission = Math.round((dto.priceAmount * commissionRate) + fixedFee);
+    const agentPayoutAmount = Math.round(dto.priceAmount - (dto.priceAmount * commissionRate));
+    const totalClientPaid = Math.round(dto.priceAmount + fixedFee);
 
     // Create Mission and Escrow Account in a transaction
     return this.prisma.$transaction(async (tx) => {
       const mission = await tx.mission.create({
         data: {
-          clientId: dto.clientId,
+          clientId,
           category: dto.category,
           city: dto.city,
           title: dto.title,
@@ -75,15 +64,17 @@ export class MissionsService {
       throw new BadRequestException(`Impossible d'assigner une mission au statut ${mission.status}`);
     }
 
+    const agentProfile = await this.prisma.agentProfile.findUnique({ where: { userId: agentId } });
+    if (!agentProfile || agentProfile.status !== 'APPROVED') {
+      throw new BadRequestException("L'agent sélectionné doit posséder un dossier KYC approuvé.");
+    }
+
     return this.prisma.$transaction(async (tx) => {
       // Increment Agent activeMissionsCount
-      const agentProfile = await tx.agentProfile.findUnique({ where: { userId: agentId } });
-      if (agentProfile) {
-        await tx.agentProfile.update({
-          where: { userId: agentId },
-          data: { activeMissionsCount: { increment: 1 } },
-        });
-      }
+      await tx.agentProfile.update({
+        where: { userId: agentId },
+        data: { activeMissionsCount: { increment: 1 } },
+      });
 
       return tx.mission.update({
         where: { id: missionId },
@@ -99,9 +90,13 @@ export class MissionsService {
   /**
    * 3. Agent Submits Proof (Transition: EN_COURS_EXECUTION -> PREUVE_SOUMISE)
    */
-  async submitProof(missionId: string, mediaUrl: string, lat: number, lng: number) {
+  async submitProof(missionId: string, agentId: string, mediaUrl: string, lat: number, lng: number) {
     const mission = await this.prisma.mission.findUnique({ where: { id: missionId } });
     if (!mission) throw new NotFoundException('Mission introuvable');
+
+    if (mission.agentId !== agentId) {
+      throw new ForbiddenException('🔒 Seul l\'agent assigné à cette mission peut soumettre des preuves.');
+    }
 
     return this.prisma.$transaction(async (tx) => {
       // Add Proof
@@ -129,13 +124,18 @@ export class MissionsService {
   /**
    * 4. Client Validates Proof & Releases Escrow (Transition: PREUVE_SOUMISE -> VALIDEE_PAR_CLIENT -> PAYEE)
    */
-  async validateAndReleaseEscrow(missionId: string) {
+  async validateAndReleaseEscrow(missionId: string, clientId: string) {
     const mission = await this.prisma.mission.findUnique({
       where: { id: missionId },
       include: { escrowAccount: true },
     });
 
     if (!mission) throw new NotFoundException('Mission introuvable');
+    
+    if (mission.clientId !== clientId) {
+      throw new ForbiddenException('🔒 Seul le client créateur de la mission peut valider cette preuve.');
+    }
+
     if (mission.status !== MissionStatus.PREUVE_SOUMISE) {
       throw new BadRequestException('Les preuves doivent être soumises avant validation.');
     }
@@ -172,13 +172,18 @@ export class MissionsService {
   /**
    * 5. Client Rejects Proof & Opens Dispute (Transition: PREUVE_SOUMISE -> LITIGE)
    */
-  async rejectProofAndOpenDispute(missionId: string, reason: string) {
+  async rejectProofAndOpenDispute(missionId: string, clientId: string, reason: string) {
     const mission = await this.prisma.mission.findUnique({
       where: { id: missionId },
       include: { escrowAccount: true },
     });
 
     if (!mission) throw new NotFoundException('Mission introuvable');
+
+    if (mission.clientId !== clientId) {
+      throw new ForbiddenException('🔒 Seul le client créateur de la mission peut ouvrir un litige.');
+    }
+
     if (mission.status !== MissionStatus.PREUVE_SOUMISE) {
       throw new BadRequestException('Un litige ne peut être ouvert que sur une preuve soumise.');
     }
@@ -200,6 +205,10 @@ export class MissionsService {
     });
 
     if (!mission) throw new NotFoundException('Mission introuvable');
+
+    if (mission.status !== MissionStatus.LITIGE) {
+      throw new BadRequestException('Un remboursement administrateur exige que la mission soit au statut LITIGE.');
+    }
 
     return this.prisma.$transaction(async (tx) => {
       // Update Escrow Account Status

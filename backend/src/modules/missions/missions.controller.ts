@@ -1,14 +1,18 @@
-import { Controller, Get, Post, Body, Param, Query, Patch } from '@nestjs/common';
-import { MissionsService, CreateMissionDto } from './missions.service';
-import { Category, City, MissionStatus } from '@prisma/client';
+import { Controller, Get, Post, Body, Param, Query, Patch, Request, UseGuards, ForbiddenException } from '@nestjs/common';
+import { MissionsService } from './missions.service';
+import { CreateMissionDto } from './dto/create-mission.dto';
+import { Category, City, MissionStatus, Role } from '@prisma/client';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('missions')
 export class MissionsController {
   constructor(private readonly missionsService: MissionsService) {}
 
   @Post()
-  async createMission(@Body() dto: CreateMissionDto) {
-    return this.missionsService.createAndHoldEscrow(dto);
+  async createMission(@Request() req: any, @Body() dto: CreateMissionDto) {
+    const clientId = req.user.id;
+    return this.missionsService.createAndHoldEscrow(clientId, dto);
   }
 
   @Get()
@@ -27,25 +31,31 @@ export class MissionsController {
 
   @Patch(':id/proof')
   async submitProof(
+    @Request() req: any,
     @Param('id') id: string,
     @Body('mediaUrl') mediaUrl: string,
     @Body('latitude') latitude: number,
     @Body('longitude') longitude: number,
   ) {
-    return this.missionsService.submitProof(id, mediaUrl, latitude, longitude);
+    const agentId = req.user.id;
+    return this.missionsService.submitProof(id, agentId, mediaUrl, latitude, longitude);
   }
 
   @Patch(':id/validate')
-  async validateMission(@Param('id') id: string) {
-    return this.missionsService.validateAndReleaseEscrow(id);
+  async validateMission(@Request() req: any, @Param('id') id: string) {
+    const clientId = req.user.id;
+    return this.missionsService.validateAndReleaseEscrow(id, clientId);
   }
 
   @Patch(':id/reject')
-  async rejectMission(@Param('id') id: string, @Body('reason') reason: string) {
-    return this.missionsService.rejectProofAndOpenDispute(id, reason);
+  async rejectMission(@Request() req: any, @Param('id') id: string, @Body('reason') reason: string) {
+    const clientId = req.user.id;
+    return this.missionsService.rejectProofAndOpenDispute(id, clientId, reason);
   }
 
   @Patch(':id/refund')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async refundMission(@Param('id') id: string) {
     return this.missionsService.refundEscrowToClient(id);
   }

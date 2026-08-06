@@ -1,11 +1,7 @@
-import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsNumber, IsObject } from 'class-validator';
 import { Category, City } from '@prisma/client';
 
 export class CreateMissionDto {
-  @IsString()
-  @IsNotEmpty()
-  clientId: string;
-
   @IsEnum(Category)
   category: Category;
 
@@ -25,12 +21,4 @@ export class CreateMissionDto {
 
   @IsNumber()
   priceAmount: number;
-
-  @IsNumber()
-  @IsOptional()
-  fixedFee?: number;
-
-  @IsNumber()
-  @IsOptional()
-  commissionRate?: number;
 }

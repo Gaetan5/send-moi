@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/api_client.dart';
+import '../role_switcher/role_provider.dart';
 
-class PhoneOtpScreen extends StatefulWidget {
-  final VoidCallback onAuthSuccess;
-
-  const PhoneOtpScreen({super.key, required this.onAuthSuccess});
+class PhoneOtpScreen extends ConsumerStatefulWidget {
+  const PhoneOtpScreen({super.key});
 
   @override
-  State<PhoneOtpScreen> createState() => _PhoneOtpScreenState();
+  ConsumerState<PhoneOtpScreen> createState() => _PhoneOtpScreenState();
 }
 
-class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
+class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   bool isOtpSent = false;
+  bool isLoading = false;
   final _phoneController = TextEditingController(text: '+237 699 00 00 00');
   final _otpController = TextEditingController();
 
@@ -21,27 +23,67 @@ class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
     super.dispose();
   }
 
-  void _requestOtp() {
+  Future<void> _requestOtp() async {
     if (_phoneController.text.isEmpty) return;
-    setState(() => isOtpSent = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Color(0xFF7C3AED),
-        content: Text('🔑 Code OTP envoyé par SMS (Ex de test : 123456)'),
-      ),
-    );
+
+    setState(() => isLoading = true);
+    try {
+      await ApiClient.post('/auth/request-otp', {
+        'phone': _phoneController.text.trim(),
+      });
+      setState(() {
+        isOtpSent = true;
+        isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF16A34A),
+            content: Text('📱 Code OTP envoyé par SMS à votre numéro.'),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
   }
 
-  void _verifyOtp() {
-    if (_otpController.text == '123456' || _otpController.text.length == 6) {
-      widget.onAuthSuccess();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Code OTP invalide. Réessayez avec 123456.'),
-        ),
-      );
+  Future<void> _verifyOtp() async {
+    if (_otpController.text.isEmpty) return;
+
+    setState(() => isLoading = true);
+    try {
+      final response = await ApiClient.post('/auth/verify-otp', {
+        'phone': _phoneController.text.trim(),
+        'code': _otpController.text.trim(),
+      });
+
+      final accessToken = response['accessToken'];
+      if (accessToken != null) {
+        ApiClient.setAuthToken(accessToken);
+      }
+
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF16A34A),
+            content: Text('✓ Authentification réussie ! Connexion sécurisée.'),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(backgroundColor: Colors.redAccent, content: Text('Code OTP invalide.')),
+        );
+      }
     }
   }
 

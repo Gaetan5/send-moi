@@ -32,8 +32,6 @@ export class AuthService {
     return {
       message: 'Code OTP envoyé par SMS avec succès',
       phone: dto.phone,
-      // For development/test convenience:
-      debugCode: code,
     };
   }
 
@@ -43,13 +41,19 @@ export class AuthService {
   async verifyOtp(dto: VerifyOtpDto) {
     const cached = this.otpCache.get(dto.phone);
 
-    // Accept "123456" as master dev code for quick test
-    if (!cached && dto.code !== '123456') {
+    // Development backdoor allowed strictly in non-production mode if enabled via DEV_MASTER_OTP
+    const isDevMasterMode = process.env.NODE_ENV !== 'production' && process.env.DEV_MASTER_OTP === dto.code;
+
+    if (!cached && !isDevMasterMode) {
       throw new BadRequestException('Code OTP expiré ou non demandé.');
     }
 
-    if (cached && cached.code !== dto.code && dto.code !== '123456') {
+    if (cached && cached.code !== dto.code && !isDevMasterMode) {
       throw new BadRequestException('Code OTP invalide.');
+    }
+
+    if (cached) {
+      this.otpCache.delete(dto.phone);
     }
 
     // Upsert User

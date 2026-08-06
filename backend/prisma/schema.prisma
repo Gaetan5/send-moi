@@ -85,6 +85,7 @@ model User {
   clientMissions Mission[]     @relation("ClientMissions")
   agentMissions  Mission[]     @relation("AgentMissions")
   transactions  PaymentTransaction[]
+  statusLogs    MissionStatusLog[]
 }
 
 model AgentProfile {
@@ -119,14 +120,15 @@ model Mission {
   title               String
   description         String
   categoryPayload     Json
-  priceAmount         Float
+  priceAmount         Int            // Montant FCFA entier
   commissionRate      Float          @default(0.10) // 10% par défaut
-  fixedFee            Float          @default(0)
-  totalClientPaid     Float
+  fixedFee            Int            @default(0)
+  totalClientPaid     Int
 
   escrowAccount       EscrowAccount?
   proofs              MissionProof[]
   transactions        PaymentTransaction[]
+  statusLogs          MissionStatusLog[]
   review              Review?
 
   createdAt           DateTime       @default(now())
@@ -138,9 +140,9 @@ model EscrowAccount {
   missionId               String       @unique
   mission                 Mission      @relation(fields: [missionId], references: [id], onDelete: Cascade)
   status                  EscrowStatus @default(HELD)
-  amountHeld              Float
-  agentPayoutAmount       Float
-  platformCommissionAmount Float
+  amountHeld              Int
+  agentPayoutAmount       Int
+  platformCommissionAmount Int
   releasedAt              DateTime?
   createdAt               DateTime     @default(now())
   updatedAt               DateTime     @updatedAt
@@ -155,7 +157,7 @@ model PaymentTransaction {
   provider      PaymentProvider
   type          TransactionType
   status        TransactionStatus @default(PENDING)
-  amount        Float
+  amount        Int
   reference     String            @unique
   rawResponse   Json?
   createdAt     DateTime          @default(now())
@@ -173,8 +175,19 @@ model MissionProof {
   capturedAt          DateTime
   isGpsVerified       Boolean   @default(true)
   isTimestampVerified Boolean   @default(true)
-  proofSignatureHash  String?   // SHA-256 cryptographic signature
+  proofSignatureHash  String?   // Signature cryptographique HMAC SHA-256
   createdAt           DateTime  @default(now())
+}
+
+model MissionStatusLog {
+  id              String        @id @default(uuid())
+  missionId       String
+  mission         Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  fromStatus      MissionStatus
+  toStatus        MissionStatus
+  changedByUserId String
+  changedByUser   User          @relation(fields: [changedByUserId], references: [id])
+  createdAt       DateTime      @default(now())
 }
 
 model Organization {
@@ -194,7 +207,7 @@ model Subscription {
   organizationId  String       @unique
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   planName        String       @default("ENTERPRISE_PRO")
-  monthlyFee      Float
+  monthlyFee      Int
   status          String       @default("ACTIVE")
   startDate       DateTime     @default(now())
   endDate         DateTime?
@@ -206,10 +219,12 @@ model WeeklyPayout {
   agent         AgentProfile @relation(fields: [agentId], references: [id])
   weekNumber    Int
   year          Int
-  totalAmount   Float
+  totalAmount   Int
   status        TransactionStatus @default(PENDING)
   processedAt   DateTime?
   createdAt     DateTime     @default(now())
+
+  @@unique([agentId, weekNumber, year])
 }
 
 model Review {

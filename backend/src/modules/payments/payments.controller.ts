@@ -1,11 +1,14 @@
-import { Controller, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { PaymentProvider, TransactionStatus } from '@prisma/client';
+import { PaymentProvider, TransactionStatus, Role } from '@prisma/client';
+import { Roles } from '../auth/roles.decorator';
+import { Public } from '../auth/public.decorator';
 
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
+  @Public()
   @Post('webhook/:provider')
   async handleWebhook(
     @Param('provider') providerStr: string,
@@ -17,6 +20,7 @@ export class PaymentsController {
     return this.paymentsService.handleMobileMoneyWebhook(reference, provider, status, payload);
   }
 
+  @Roles(Role.ADMIN)
   @Post('payouts/weekly')
   async triggerWeeklyPayouts(
     @Query('week') weekNumber: number,

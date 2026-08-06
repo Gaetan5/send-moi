@@ -8,9 +8,12 @@ import { UsersModule } from './modules/users/users.module';
 import { MissionsModule } from './modules/missions/missions.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { MatchingService } from './modules/matching/matching.service';
 import { ProofsService } from './modules/proofs/proofs.service';
 import { RealtimeGateway } from './gateways/realtime.gateway';
+import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
+import { HealthController } from './modules/health/health.controller';
 
 @Module({
   imports: [
@@ -25,8 +28,11 @@ import { RealtimeGateway } from './gateways/realtime.gateway';
     MissionsModule,
     PaymentsModule,
     OrganizationsModule,
+    StorageModule,
   ],
+  controllers: [HealthController],
   providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     MatchingService,
     ProofsService,
