@@ -1,10 +1,12 @@
-name: Backend CI/CD Pipeline
+name: Backend CI/CD & SSH Deployment Pipeline
 
 on:
   push:
     branches: [ main, staging ]
     paths:
       - 'backend/**'
+      - 'infrastructure/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -12,7 +14,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Lint, Test & Build NestJS
+    name: 🧪 Lint, Test & Build NestJS
     runs-on: ubuntu-latest
 
     defaults:
@@ -43,7 +45,7 @@ jobs:
         run: npm run build
 
   docker-build:
-    name: Build & Push Docker Image
+    name: 🐳 Build & Push Docker Image
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -71,3 +73,43 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}/backend:latest
             ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+
+  deploy-ssh:
+    name: 🚀 SSH Remote Deployment to VPS
+    needs: docker-build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Remote VPS Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            echo "🚀 [SSH Deploy] Connexion établie au serveur VPS !"
+            TARGET_DIR="${{ secrets.TARGET_DIR || '/var/www/send-moi' }}"
+            
+            if [ -d "$TARGET_DIR" ]; then
+              cd "$TARGET_DIR"
+              echo "📥 [SSH Deploy] Récupération du code source..."
+              git pull origin main || true
+              
+              echo "🗄️ [SSH Deploy] Exécution des migrations Prisma..."
+              docker compose -f backend/docker-compose.yml run --rm backend npx prisma migrate deploy || true
+              
+              echo "🔄 [SSH Deploy] Redémarrage sans interruption des conteneurs Docker..."
+              docker compose -f backend/docker-compose.yml up -d --no-deps --build
+              
+              echo "🧹 [SSH Deploy] Nettoyage des anciennes images Docker..."
+              docker image prune -f
+              
+              echo "✅ [SSH Deploy] Déploiement VPS achevé avec succès !"
+            else
+              echo "⚠️ [SSH Deploy] Le répertoire $TARGET_DIR n'existe pas encore sur le VPS."
+            fi
