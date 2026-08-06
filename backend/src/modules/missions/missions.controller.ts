@@ -23,6 +23,12 @@ export class MissionsController {
     return this.missionsService.findAll(city, category, status);
   }
 
+  @Patch('milestones/:id/release')
+  async releaseMilestone(@Request() req: any, @Param('id') milestoneId: string) {
+    const clientId = req.user.id;
+    return this.missionsService.releaseMilestoneEscrow(milestoneId, clientId);
+  }
+
   @Patch(':id/assign')
   async assignAgent(@Param('id') id: string, @Body('agentId') agentId: string) {
     return this.missionsService.assignAgent(id, agentId);
@@ -57,11 +63,5 @@ export class MissionsController {
   @Roles(Role.ADMIN)
   async refundMission(@Param('id') id: string) {
     return this.missionsService.refundEscrowToClient(id);
-  }
-
-  @Patch('milestones/:id/release')
-  async releaseMilestone(@Request() req: any, @Param('id') milestoneId: string) {
-    const clientId = req.user.id;
-    return this.missionsService.releaseMilestoneEscrow(milestoneId, clientId);
   }
 }

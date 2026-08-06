@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Category, City, MissionStatus, EscrowStatus } from '@prisma/client';
 import { CreateMissionDto } from './dto/create-mission.dto';
@@ -6,6 +6,8 @@ import { PdfContractService } from '../proofs/pdf-contract.service';
 
 @Injectable()
 export class MissionsService {
+  private readonly logger = new Logger(MissionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfContractService: PdfContractService,
@@ -115,7 +117,7 @@ export class MissionsService {
     try {
       await this.pdfContractService.generateAndAttachContract(missionId);
     } catch (err) {
-      // Non-blocking for mission flow, logged
+      this.logger.error(`⚠️ Erreur lors de la génération du contrat PDF pour la mission ${missionId}:`, err);
     }
 
     return updatedMission;
