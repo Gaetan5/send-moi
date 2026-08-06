@@ -1,13 +1,25 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
   static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
+  static const _storage = FlutterSecureStorage();
   static String? _jwtToken;
 
-  static void setAuthToken(String token) {
+  static Future<void> init() async {
+    _jwtToken = await _storage.read(key: 'jwt_token');
+  }
+
+  static Future<void> setAuthToken(String token) async {
     _jwtToken = token;
+    await _storage.write(key: 'jwt_token', value: token);
+  }
+
+  static Future<void> clearAuthToken() async {
+    _jwtToken = null;
+    await _storage.delete(key: 'jwt_token');
   }
 
   static Map<String, String> get _headers => {
