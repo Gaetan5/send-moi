@@ -144,7 +144,7 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                value: selectedCity,
+                initialValue: selectedCity,
                 dropdownColor: const Color(0xFF141228),
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
