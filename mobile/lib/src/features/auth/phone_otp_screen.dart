@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
-import '../role_switcher/role_provider.dart';
 
 class PhoneOtpScreen extends ConsumerStatefulWidget {
-  const PhoneOtpScreen({super.key});
+  final VoidCallback? onAuthSuccess;
+
+  const PhoneOtpScreen({super.key, this.onAuthSuccess});
 
   @override
   ConsumerState<PhoneOtpScreen> createState() => _PhoneOtpScreenState();
@@ -69,6 +70,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
       }
 
       setState(() => isLoading = false);
+      widget.onAuthSuccess?.call();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
