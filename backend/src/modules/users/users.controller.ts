@@ -13,8 +13,9 @@ export class UsersController {
   }
 
   @Post('apply-agent')
-  async applyAsAgent(@Body() dto: ApplyAgentDto) {
-    return this.usersService.applyAsAgent(dto);
+  async applyAsAgent(@Req() req: any, @Body() dto: ApplyAgentDto) {
+    const userId = req.user.id;
+    return this.usersService.applyAsAgent({ ...dto, userId });
   }
 
   @Patch('agents/:id/status')

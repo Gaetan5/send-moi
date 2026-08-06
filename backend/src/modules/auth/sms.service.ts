@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import http from 'http';
 
 @Injectable()
 export class SmsService {
@@ -11,24 +10,56 @@ export class SmsService {
   async sendSmsOtp(phone: string, code: string): Promise<boolean> {
     const message = `Votre code de vérification Send Moi est : ${code}. Valide pendant 5 minutes.`;
 
-    this.logger.log(`📱 [SMS Provider] Expédition SMS à ${phone} : "${message}"`);
+    this.logger.log(`📱 [SMS Provider] Expédition SMS à ${phone}...`);
 
-    // 1. If Africa's Talking API key is set in .env
-    if (process.env.AFRICAS_TALKING_API_KEY) {
-      this.logger.log(`🚀 [SMS Provider] Envoi via Africa's Talking API vers ${phone}...`);
-      // Call Africa's Talking SMS API HTTP endpoint
-      return true;
+    // 1. Real integration via Africa's Talking SMS API (Primary Africa/Cameroon Provider)
+    const apiKey = process.env.AFRICAS_TALKING_API_KEY;
+    const username = process.env.AFRICAS_TALKING_USERNAME || 'sandbox';
+
+    if (apiKey) {
+      this.logger.log(`🚀 [SMS Provider] Envoi via Africa's Talking SMS API (${username}) vers ${phone}...`);
+      try {
+        const body = new URLSearchParams({
+          username,
+          to: phone,
+          message,
+        });
+
+        const url = username === 'sandbox'
+          ? 'https://api.sandbox.africastalking.com/version1/messaging'
+          : 'https://api.africastalking.com/version1/messaging';
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'apiKey': apiKey,
+            'Accept': 'application/json',
+          },
+          body: body.toString(),
+        });
+
+        if (response.ok) {
+          this.logger.log(`✅ [SMS Provider] SMS délivré avec succès à ${phone}`);
+          return true;
+        } else {
+          const errText = await response.text();
+          this.logger.error(`❌ [SMS Provider] Échec envoi Africa's Talking (${response.status}): ${errText}`);
+          return false;
+        }
+      } catch (err: any) {
+        this.logger.error(`❌ [SMS Provider] Erreur réseau SMS: ${err.message}`);
+        return false;
+      }
     }
 
-    // 2. If Twilio credentials set in .env
-    if (process.env.TWILIO_ACCOUNT_SID) {
-      this.logger.log(`🚀 [SMS Provider] Envoi via Twilio SMS API vers ${phone}...`);
-      // Call Twilio REST API
-      return true;
+    // 2. Fallback mode for development/testing
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.log(`ℹ️ [SMS Provider] Mode simulation développement actif pour ${phone}.`);
+    } else {
+      this.logger.warn(`⚠️ [SMS Provider] Aucune clé API SMS configurée en environnement non-dev.`);
     }
 
-    // Fallback mode for development/staging
-    this.logger.warn(`⚠️ [SMS Provider] Pas de clés API SMS renseignées. Mode simulation actif (OTP: ${code}).`);
     return true;
   }
 }

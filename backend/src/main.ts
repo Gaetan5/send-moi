@@ -6,9 +6,14 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for Landing site & Flutter Web/Mobile
+  // Enable CORS with ALLOWED_ORIGINS configuration
+  const allowedOriginsEnv = process.env.ALLOWED_ORIGINS;
+  const allowedOrigins = allowedOriginsEnv
+    ? allowedOriginsEnv.split(',').map((o) => o.trim())
+    : ['http://localhost', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:80'];
+
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

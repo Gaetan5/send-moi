@@ -33,6 +33,8 @@ export class MissionsController {
   }
 
   @Patch(':id/assign')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   async assignAgent(@Param('id') id: string, @Body('agentId') agentId: string) {
     return this.missionsService.assignAgent(id, agentId);
   }
