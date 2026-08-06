@@ -93,10 +93,46 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
     }
   }
 
+  Future<void> _googleAuth() async {
+    setState(() => isLoading = true);
+    try {
+      final response = await ApiClient.post('/auth/google', {
+        'googleId': 'google_user_demo_123',
+        'email': 'user.demo@gmail.com',
+        'fullName': 'Utilisateur Google',
+        'avatarUrl': 'https://lh3.googleusercontent.com/a/default-user',
+      });
+
+      final accessToken = response['accessToken'];
+      if (accessToken != null) {
+        ApiClient.setAuthToken(accessToken);
+        RealtimeClient.connect(accessToken);
+      }
+
+      setState(() => isLoading = false);
+      widget.onAuthSuccess?.call();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF16A34A),
+            content: Text('✓ Authentification Google / Email réussie !'),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text('Erreur Google: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0914),
+      backgroundColor: const Color(0xFF0B0A14),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -122,7 +158,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
               Text(
                 isOtpSent
                     ? 'Entrez le code à 6 chiffres envoyé au ${_phoneController.text}'
-                    : 'Saisissez votre numéro de téléphone pour vous connecter.',
+                    : 'Choisissez votre mode de connexion (SMS OTP ou Compte Google).',
                 style: const TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 32),
@@ -133,20 +169,45 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
                   keyboardType: TextInputType.phone,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Numéro de téléphone',
+                    labelText: 'Numéro de téléphone (+237...)',
                     prefixIcon: const Icon(Icons.phone, color: Color(0xFF7C3AED)),
                     filled: true,
                     fillColor: const Color(0xFF141228),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _requestOtp,
                     child: const Text('Recevoir le code OTP par SMS'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.white24)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('OU', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
+                    ),
+                    Expanded(child: Divider(color: Colors.white24)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: _googleAuth,
+                    icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.white),
+                    label: const Text('Continuer avec Google / Email', style: TextStyle(color: Colors.white)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
               ] else ...[

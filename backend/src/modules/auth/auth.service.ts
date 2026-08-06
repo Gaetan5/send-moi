@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RequestOtpDto, VerifyOtpDto } from './dto/auth.dto';
+import { RequestOtpDto, VerifyOtpDto, GoogleAuthDto } from './dto/auth.dto';
 import { Role } from '@prisma/client';
 import { SmsService } from './sms.service';
 
@@ -79,6 +79,53 @@ export class AuthService {
         id: user.id,
         phone: user.phone,
         fullName: user.fullName,
+        role: user.role,
+        city: user.city,
+      },
+    };
+  }
+
+  /**
+   * Authenticate or register user via Google OAuth / Email
+   */
+  async googleAuth(dto: GoogleAuthDto) {
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { googleId: dto.googleId },
+          { email: dto.email },
+        ],
+      },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          googleId: dto.googleId,
+          email: dto.email,
+          fullName: dto.fullName,
+          avatarUrl: dto.avatarUrl,
+          role: Role.CLIENT,
+        },
+      });
+    } else if (!user.googleId) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { googleId: dto.googleId, avatarUrl: dto.avatarUrl ?? user.avatarUrl },
+      });
+    }
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        email: user.email,
+        fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
         role: user.role,
         city: user.city,
       },

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, Matches, IsEmail, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class RequestOtpDto {
@@ -18,4 +18,22 @@ export class VerifyOtpDto {
   @IsString()
   @IsNotEmpty()
   code: string;
+}
+
+export class GoogleAuthDto {
+  @IsString()
+  @IsNotEmpty()
+  googleId: string;
+
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  fullName: string;
+
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
 }

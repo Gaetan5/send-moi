@@ -75,8 +75,11 @@ enum MediaType {
 
 model User {
   id            String         @id @default(uuid())
-  phone         String         @unique
+  phone         String?        @unique
+  email         String?        @unique
+  googleId      String?        @unique
   fullName      String
+  avatarUrl     String?
   role          Role           @default(CLIENT)
   city          City           @default(DOUALA)
   createdAt     DateTime       @default(now())
