@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-send_moi_password}
       POSTGRES_DB: ${POSTGRES_DB:-send_moi_db}
     ports:
-      - '5432:5432'
+      - '54322:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -17,7 +17,7 @@ services:
     container_name: send_moi_redis
     restart: always
     ports:
-      - '6379:6379'
+      - '63792:6379'
     volumes:
       - redis_data:/data
 
