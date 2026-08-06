@@ -9,17 +9,29 @@ class ApiClient {
   static String? _jwtToken;
 
   static Future<void> init() async {
-    _jwtToken = await _storage.read(key: 'jwt_token');
+    try {
+      _jwtToken = await _storage.read(key: 'jwt_token');
+    } catch (e) {
+      debugPrint('⚠️ [ApiClient] Secure storage inaccessible (fallback mémoire actif): $e');
+    }
   }
 
   static Future<void> setAuthToken(String token) async {
     _jwtToken = token;
-    await _storage.write(key: 'jwt_token', value: token);
+    try {
+      await _storage.write(key: 'jwt_token', value: token);
+    } catch (e) {
+      debugPrint('⚠️ [ApiClient] Erreur d\'écriture Secure storage: $e');
+    }
   }
 
   static Future<void> clearAuthToken() async {
     _jwtToken = null;
-    await _storage.delete(key: 'jwt_token');
+    try {
+      await _storage.delete(key: 'jwt_token');
+    } catch (e) {
+      debugPrint('⚠️ [ApiClient] Erreur de suppression Secure storage: $e');
+    }
   }
 
   static Map<String, String> get _headers => {
