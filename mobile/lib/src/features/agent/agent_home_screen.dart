@@ -67,10 +67,10 @@ class _AgentHomeScreenState extends ConsumerState<AgentHomeScreen> {
                       child: Text('SK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text('Samuel Kouamé', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                           Text('Agent Vérifié • Douala (Makepe)', style: TextStyle(fontSize: 12, color: Colors.white70)),
                         ],
