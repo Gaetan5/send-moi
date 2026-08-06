@@ -33,6 +33,8 @@ services:
       - '3000:3000'
     environment:
       PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      DEV_MASTER_OTP: ${DEV_MASTER_OTP:-123456}
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-send_moi_user}:${POSTGRES_PASSWORD:-send_moi_password}@postgres:5432/${POSTGRES_DB:-send_moi_db}?schema=public}
       JWT_SECRET: ${JWT_SECRET:-send_moi_dev_secret_key_2026}
       REDIS_HOST: redis
