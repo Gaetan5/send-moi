@@ -19,6 +19,7 @@ export class PaymentsController {
     return this.paymentsService.handleMobileMoneyWebhook(reference, provider, status, payload);
   }
 
+  @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Post('payouts/weekly')
   async triggerWeeklyPayouts(
