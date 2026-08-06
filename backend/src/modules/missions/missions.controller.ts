@@ -2,8 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, Patch, Request, UseGuards, F
 import { MissionsService } from './missions.service';
 import { CreateMissionDto } from './dto/create-mission.dto';
 import { Category, City, MissionStatus, Role } from '@prisma/client';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { RolesGuard, Roles } from '../auth';
 
 @Controller('missions')
 export class MissionsController {

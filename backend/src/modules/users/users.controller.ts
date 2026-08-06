@@ -1,8 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
 import { UsersService, ApplyAgentDto } from './users.service';
 import { AgentStatus, Role } from '@prisma/client';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { RolesGuard, Roles } from '../auth';
 
 @Controller('users')
 export class UsersController {

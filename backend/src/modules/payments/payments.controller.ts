@@ -1,8 +1,7 @@
 import { Controller, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PaymentProvider, TransactionStatus, Role } from '@prisma/client';
-import { Roles } from '../auth/roles.decorator';
-import { Public } from '../auth/public.decorator';
+import { RolesGuard, Roles, Public } from '../auth';
 
 @Controller('payments')
 export class PaymentsController {
