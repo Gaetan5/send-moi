@@ -1,5 +1,15 @@
-import { IsString, IsNotEmpty, IsEnum, IsNumber, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsNumber, IsObject, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { Category, City } from '@prisma/client';
+
+export class MilestoneDto {
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsNumber()
+  percentage: number;
+}
 
 export class CreateMissionDto {
   @IsEnum(Category)
@@ -21,4 +31,10 @@ export class CreateMissionDto {
 
   @IsNumber()
   priceAmount: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MilestoneDto)
+  milestones?: MilestoneDto[];
 }

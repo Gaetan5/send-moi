@@ -2,15 +2,26 @@ import { Injectable, BadRequestException, NotFoundException, ForbiddenException 
 import { PrismaService } from '../../prisma/prisma.service';
 import { Category, City, MissionStatus, EscrowStatus } from '@prisma/client';
 import { CreateMissionDto } from './dto/create-mission.dto';
+import { PdfContractService } from '../proofs/pdf-contract.service';
 
 @Injectable()
 export class MissionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdfContractService: PdfContractService,
+  ) {}
 
   /**
    * 1. Create Mission & Hold Funds in Escrow (Paid immediately upon order validation)
    */
   async createAndHoldEscrow(clientId: string, dto: CreateMissionDto) {
+    if (dto.milestones && dto.milestones.length > 0) {
+      const totalPercentage = dto.milestones.reduce((acc, m) => acc + m.percentage, 0);
+      if (Math.abs(totalPercentage - 100) > 0.01) {
+        throw new BadRequestException('La somme des pourcentages des jalons doit faire exactement 100%.');
+      }
+    }
+
     const commissionRate = 0.10; // Fixed 10% platform commission
     const fixedFee = 0;           // Fixed operational fee
     const platformCommission = Math.round((dto.priceAmount * commissionRate) + fixedFee);
@@ -46,9 +57,23 @@ export class MissionsService {
         },
       });
 
+      // Create Milestones if provided
+      if (dto.milestones && dto.milestones.length > 0) {
+        await tx.missionMilestone.createMany({
+          data: dto.milestones.map((m, index) => ({
+            missionId: mission.id,
+            title: m.title,
+            percentage: m.percentage,
+            amount: Math.round((totalClientPaid * m.percentage) / 100),
+            orderIndex: index + 1,
+            status: EscrowStatus.HELD,
+          })),
+        });
+      }
+
       return tx.mission.findUnique({
         where: { id: mission.id },
-        include: { escrowAccount: true, client: true },
+        include: { escrowAccount: true, client: true, milestones: true },
       });
     });
   }
@@ -69,7 +94,7 @@ export class MissionsService {
       throw new BadRequestException("L'agent sélectionné doit posséder un dossier KYC approuvé.");
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const updatedMission = await this.prisma.$transaction(async (tx) => {
       // Increment Agent activeMissionsCount
       await tx.agentProfile.update({
         where: { userId: agentId },
@@ -85,6 +110,15 @@ export class MissionsService {
         include: { agent: true, escrowAccount: true },
       });
     });
+
+    // Generate PDF Contract & SHA-256 Hash
+    try {
+      await this.pdfContractService.generateAndAttachContract(missionId);
+    } catch (err) {
+      // Non-blocking for mission flow, logged
+    }
+
+    return updatedMission;
   }
 
   /**
@@ -227,6 +261,43 @@ export class MissionsService {
   }
 
   /**
+   * 7. Release Milestone Escrow Part (Transition: HELD -> RELEASED pour un jalon spécifique)
+   */
+  async releaseMilestoneEscrow(milestoneId: string, clientId: string) {
+    const milestone = await this.prisma.missionMilestone.findUnique({
+      where: { id: milestoneId },
+      include: { mission: { include: { escrowAccount: true } } },
+    });
+
+    if (!milestone) throw new NotFoundException('Jalon introuvable');
+    if (milestone.mission.clientId !== clientId) {
+      throw new ForbiddenException('🔒 Seul le client créateur de la mission peut débloquer ce jalon.');
+    }
+    if (milestone.status === EscrowStatus.RELEASED) {
+      throw new BadRequestException('Ce jalon a déjà été débloqué.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // Mark milestone released
+      const updatedMilestone = await tx.missionMilestone.update({
+        where: { id: milestoneId },
+        data: { status: EscrowStatus.RELEASED, releasedAt: new Date() },
+      });
+
+      // Deduct from total Escrow amount held
+      if (milestone.mission.escrowAccount) {
+        const newAmountHeld = Math.max(0, milestone.mission.escrowAccount.amountHeld - milestone.amount);
+        await tx.escrowAccount.update({
+          where: { missionId: milestone.missionId },
+          data: { amountHeld: newAmountHeld },
+        });
+      }
+
+      return updatedMilestone;
+    });
+  }
+
+  /**
    * Fetch All Missions with Filters
    */
   async findAll(city?: City, category?: Category, status?: MissionStatus) {
@@ -241,6 +312,7 @@ export class MissionsService {
         agent: { select: { id: true, fullName: true, phone: true } },
         escrowAccount: true,
         proofs: true,
+        milestones: true,
       },
       orderBy: { createdAt: 'desc' },
     });

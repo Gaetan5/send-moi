@@ -58,4 +58,10 @@ export class MissionsController {
   async refundMission(@Param('id') id: string) {
     return this.missionsService.refundEscrowToClient(id);
   }
+
+  @Patch('milestones/:id/release')
+  async releaseMilestone(@Request() req: any, @Param('id') milestoneId: string) {
+    const clientId = req.user.id;
+    return this.missionsService.releaseMilestoneEscrow(milestoneId, clientId);
+  }
 }

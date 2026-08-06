@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MissionsService } from './missions.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PdfContractService } from '../proofs/pdf-contract.service';
 import { Category, City, MissionStatus, EscrowStatus } from '@prisma/client';
 
 describe('MissionsService', () => {
@@ -22,6 +23,16 @@ describe('MissionsService', () => {
     missionProof: {
       create: jest.fn(),
     },
+    missionMilestone: {
+      createMany: jest.fn(),
+    },
+  };
+
+  const mockPdfContractService = {
+    generateAndAttachContract: jest.fn().mockResolvedValue({
+      contractHash: 'mock-hash-sha256',
+      contractPdfUrl: '/uploads/contracts/mock.pdf',
+    }),
   };
 
   beforeEach(async () => {
@@ -29,6 +40,7 @@ describe('MissionsService', () => {
       providers: [
         MissionsService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: PdfContractService, useValue: mockPdfContractService },
       ],
     }).compile();
 

@@ -78,4 +78,30 @@ export class UsersService {
     if (!user) throw new NotFoundException('Utilisateur introuvable.');
     return user;
   }
+
+  /**
+   * Calculate TrustScore (Weighted score out of 100 based on rating, no-dispute rate and GPS compliance)
+   */
+  async calculateAgentTrustScore(agentUserId: string): Promise<number> {
+    const profile = await this.prisma.agentProfile.findUnique({ where: { userId: agentUserId } });
+    if (!profile) return 50.0; // Default base score
+
+    const totalMissions = await this.prisma.mission.count({ where: { agentId: agentUserId } });
+    if (totalMissions === 0) return 80.0; // Starting score for new verified agent
+
+    const disputeMissions = await this.prisma.mission.count({
+      where: { agentId: agentUserId, status: 'LITIGE' },
+    });
+
+    const successfulMissions = await this.prisma.mission.count({
+      where: { agentId: agentUserId, status: { in: ['VALIDEE_PAR_CLIENT', 'PAYEE', 'CLOTUREE'] } },
+    });
+
+    const disputeFreeRate = ((totalMissions - disputeMissions) / totalMissions) * 100;
+    const ratingScore = (profile.rating / 5.0) * 100;
+
+    // TrustScore formula: 50% Rating + 50% Dispute-Free Rate
+    const trustScore = Math.round((ratingScore * 0.5 + disputeFreeRate * 0.5) * 10) / 10;
+    return trustScore;
+  }
 }

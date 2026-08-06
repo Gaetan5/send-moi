@@ -124,15 +124,31 @@ model Mission {
   commissionRate      Float          @default(0.10) // 10% par défaut
   fixedFee            Int            @default(0)
   totalClientPaid     Int
+  contractHash        String?        // SHA-256 du contrat de courtage PDF
+  contractPdfUrl      String?
 
   escrowAccount       EscrowAccount?
   proofs              MissionProof[]
+  milestones          MissionMilestone[]
   transactions        PaymentTransaction[]
   statusLogs          MissionStatusLog[]
   review              Review?
 
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
+}
+
+model MissionMilestone {
+  id              String       @id @default(uuid())
+  missionId       String
+  mission         Mission      @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  title           String
+  amount          Int          // Montant du jalon en FCFA
+  percentage      Float        // Pourcentage (ex: 30 pour 30%)
+  status          EscrowStatus @default(HELD)
+  orderIndex      Int          @default(1)
+  releasedAt      DateTime?
+  createdAt       DateTime     @default(now())
 }
 
 model EscrowAccount {

@@ -31,4 +31,23 @@ export class StorageService {
 
     return publicUrl;
   }
+
+  /**
+   * Save buffer file (contracts, PDFs) to disk or S3
+   */
+  async uploadBuffer(relativePath: string, buffer: Buffer, mimeType: string): Promise<string> {
+    const fullPath = path.join(this.uploadDir, relativePath);
+    const dir = path.dirname(fullPath);
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    await fs.promises.writeFile(fullPath, buffer);
+    this.logger.log(`📄 Document contrat sauvegardé : ${relativePath}`);
+
+    return process.env.S3_BUCKET_URL
+      ? `${process.env.S3_BUCKET_URL}/${relativePath}`
+      : `/uploads/${relativePath}`;
+  }
 }
