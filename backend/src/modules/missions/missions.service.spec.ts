@@ -61,7 +61,7 @@ describe('MissionsService', () => {
       escrowAccount: { status: EscrowStatus.HELD, amountHeld: 25000, agentPayoutAmount: 22500, platformCommissionAmount: 2500 },
     });
 
-    const result = await service.createAndHoldEscrow(dto);
+    const result = await service.createAndHoldEscrow('client-uuid-1', dto);
 
     expect(result).toBeDefined();
     expect(mockPrismaService.mission.create).toHaveBeenCalled();
