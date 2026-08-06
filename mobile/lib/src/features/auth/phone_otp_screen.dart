@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
+import '../../core/realtime_client.dart';
 
 class PhoneOtpScreen extends ConsumerStatefulWidget {
   final VoidCallback? onAuthSuccess;
@@ -67,6 +68,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
       final accessToken = response['accessToken'];
       if (accessToken != null) {
         ApiClient.setAuthToken(accessToken);
+        RealtimeClient.connect(accessToken);
       }
 
       setState(() => isLoading = false);
