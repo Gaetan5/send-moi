@@ -117,12 +117,12 @@ class _MissionTrackingScreenState extends State<MissionTrackingScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text('📍 4.0511° N, 9.7679° E (Douala)', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                           Text('⏱️ Aujourd\'hui 14:32', style: TextStyle(color: Color(0xFF4ADE80), fontSize: 11)),
                         ],

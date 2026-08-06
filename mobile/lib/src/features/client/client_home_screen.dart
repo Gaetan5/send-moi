@@ -46,19 +46,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [Color(0xFF5B21B6), Color(0xFF7C3AED)],
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.all(Radius.circular(16)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.shield, size: 40, color: Colors.white),
-                  const SizedBox(width: 12),
+                  Icon(Icons.shield, size: 40, color: Colors.white),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'Paiement Sous Séquestre Garanti',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),

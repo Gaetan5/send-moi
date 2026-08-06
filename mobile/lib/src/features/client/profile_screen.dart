@@ -45,18 +45,18 @@ class ProfileScreen extends StatelessWidget {
                   color: const Color(0xFF141228),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(
+                child: const Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.phone, color: Color(0xFF7C3AED)),
-                      title: const Text('Numéro de téléphone', style: TextStyle(color: Colors.white)),
-                      subtitle: const Text('Authentifié via OTP / Google', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      leading: Icon(Icons.phone, color: Color(0xFF7C3AED)),
+                      title: Text('Numéro de téléphone', style: TextStyle(color: Colors.white)),
+                      subtitle: Text('Authentifié via OTP / Google', style: TextStyle(color: Colors.white54, fontSize: 12)),
                     ),
-                    const Divider(color: Colors.white12, height: 1),
+                    Divider(color: Colors.white12, height: 1),
                     ListTile(
-                      leading: const Icon(Icons.security, color: Color(0xFF16A34A)),
-                      title: const Text('Protection Séquestre', style: TextStyle(color: Colors.white)),
-                      subtitle: const Text('Contrats horodatés SHA-256', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      leading: Icon(Icons.security, color: Color(0xFF16A34A)),
+                      title: Text('Protection Séquestre', style: TextStyle(color: Colors.white)),
+                      subtitle: Text('Contrats horodatés SHA-256', style: TextStyle(color: Colors.white54, fontSize: 12)),
                     ),
                   ],
                 ),
