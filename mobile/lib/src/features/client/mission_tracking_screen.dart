@@ -5,12 +5,14 @@ class MissionTrackingScreen extends StatefulWidget {
   final String missionTitle;
   final String agentName;
   final String city;
+  final String? missionId;
 
   const MissionTrackingScreen({
     super.key,
-    required this.missionTitle,
-    required this.agentName,
-    required this.city,
+    this.missionTitle = 'Supervision Chantier Makepe',
+    this.agentName = 'Paul Mbida (Agent Vérifié)',
+    this.city = 'Douala',
+    this.missionId,
   });
 
   @override

@@ -89,7 +89,12 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => MissionTrackingScreen(missionId: item['id'] ?? 'demo_123'),
+                              builder: (_) => MissionTrackingScreen(
+                                missionTitle: title,
+                                city: item['city'] ?? 'Douala',
+                                agentName: item['agent']?['fullName'] ?? 'Agent En Attente',
+                                missionId: item['id'] ?? 'demo_123',
+                              ),
                             ),
                           );
                         },

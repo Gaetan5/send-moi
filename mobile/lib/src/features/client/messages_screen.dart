@@ -78,7 +78,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
-                        crossAxisAlignment: isMe ? CrossAlignment.end : CrossAlignment.start,
+                        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                         children: [
                           Text(msg['sender']!, style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
@@ -99,11 +99,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     child: TextField(
                       controller: _msgController,
                       style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Écrire un message en direct...',
-                        hintStyle: const TextStyle(color: Colors.white54),
+                        hintStyle: TextStyle(color: Colors.white54),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
                       ),
                     ),
                   ),

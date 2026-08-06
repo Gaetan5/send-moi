@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'mission_tracking_screen.dart';
+import 'new_request_screen.dart';
 
 class ClientHomeScreen extends ConsumerStatefulWidget {
   const ClientHomeScreen({super.key});
@@ -12,88 +13,6 @@ class ClientHomeScreen extends ConsumerStatefulWidget {
 class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   String selectedCity = 'Douala';
   String selectedCategory = 'Supervision Chantier';
-
-  final _titleController = TextEditingController();
-  final _descController = TextEditingController();
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descController.dispose();
-    super.dispose();
-  }
-
-  void _submitEscrowOrder() {
-    if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez spécifier le titre de la mission')),
-      );
-      return;
-    }
-
-    final missionTitle = _titleController.text;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF141228),
-        title: const Text('Confirmation de paiement sous séquestre'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Ville: $selectedCity'),
-            Text('Catégorie: $selectedCategory'),
-            const SizedBox(height: 8),
-            const Text(
-              'Montant total à débiter (Mobile Money): 25 000 FCFA',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4ADE80)),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '🔒 Vos fonds restent retenus sous séquestre jusqu\'à la validation des preuves photos.',
-              style: TextStyle(fontSize: 12, color: Colors.white70),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler', style: TextStyle(color: Colors.white60)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Color(0xFF16A34A),
-                  content: Text('✓ Paiement séquestre validé ! Recherche de l\'agent en cours à Douala...'),
-                ),
-              );
-              
-              // Navigate to MissionTrackingScreen (Fix BUG-03)
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MissionTrackingScreen(
-                    missionTitle: missionTitle,
-                    agentName: 'Samuel Kouamé',
-                    city: selectedCity,
-                  ),
-                ),
-              );
-
-              _titleController.clear();
-              _descController.clear();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
-            child: const Text('Payer via MoMo / Orange'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
