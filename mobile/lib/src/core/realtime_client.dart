@@ -1,19 +1,19 @@
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_client.dart';
 
 class RealtimeClient {
-  static IO.Socket? _socket;
+  static io.Socket? _socket;
 
   /// Connect to backend WebSocket Gateway with Bearer JWT Token
   static void connect(String authToken) {
     if (_socket != null && _socket!.connected) return;
 
-    final baseUrl = ApiClient.baseUrl;
+    const baseUrl = ApiClient.baseUrl;
 
-    _socket = IO.io(
+    _socket = io.io(
       baseUrl,
-      IO.OptionBuilder()
+      io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .setAuth({'token': 'Bearer $authToken'})
