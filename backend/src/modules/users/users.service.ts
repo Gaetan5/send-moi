@@ -81,6 +81,7 @@ export class UsersService {
     const isAdmin = requestingUser && requestingUser.role === Role.ADMIN;
 
     if (!isOwner && !isAdmin && user.agentProfile) {
+      const trustScore = await this.calculateAgentTrustScore(user.agentProfile.userId);
       // Sanitize sensitive KYC data
       return {
         ...user,
@@ -89,7 +90,7 @@ export class UsersService {
           userId: user.agentProfile.userId,
           status: user.agentProfile.status,
           rating: user.agentProfile.rating,
-          trustScore: user.agentProfile.trustScore,
+          trustScore: trustScore,
           preferredZones: user.agentProfile.preferredZones,
           // Mask CNI and MoMo number for privacy
           cniNumber: '***',

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Category, City, MissionStatus, EscrowStatus } from '@prisma/client';
+import { Category, City, MissionStatus, EscrowStatus, Role } from '@prisma/client';
 import { CreateMissionDto } from './dto/create-mission.dto';
 import { PdfContractService } from '../proofs/pdf-contract.service';
 

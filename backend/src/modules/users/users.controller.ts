@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { UsersService, ApplyAgentDto } from './users.service';
 import { AgentStatus, Role } from '@prisma/client';
 import { RolesGuard, Roles } from '../auth';
@@ -8,7 +8,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get(':id')
-  async getProfile(@Request() req: any, @Param('id') id: string) {
+  async getProfile(@Req() req: any, @Param('id') id: string) {
     return this.usersService.getProfile(id, req.user);
   }
 
