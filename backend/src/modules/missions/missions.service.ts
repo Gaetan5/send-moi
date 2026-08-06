@@ -300,11 +300,17 @@ export class MissionsService {
   }
 
   /**
-   * Fetch All Missions with Filters
+   * Fetch All Missions with Strict User Scope Filters
    */
-  async findAll(city?: City, category?: Category, status?: MissionStatus) {
+  async findAll(userId?: string, role?: Role, city?: City, category?: Category, status?: MissionStatus) {
+    const isClient = role === Role.CLIENT;
+    const isAgent = role === Role.AGENT;
+    const isAdmin = role === Role.ADMIN;
+
     return this.prisma.mission.findMany({
       where: {
+        ...(isClient && userId ? { clientId: userId } : {}),
+        ...(isAgent && userId ? { OR: [{ agentId: userId }, { status: MissionStatus.SOUMISE }] } : {}),
         ...(city && { city }),
         ...(category && { category }),
         ...(status && { status }),

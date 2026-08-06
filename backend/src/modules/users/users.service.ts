@@ -68,14 +68,36 @@ export class UsersService {
   }
 
   /**
-   * Get User Profile with Agent details
+   * Get User Profile with Agent details (Sanitized for non-owners)
    */
-  async getProfile(userId: string) {
+  async getProfile(targetUserId: string, requestingUser?: any) {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: targetUserId },
       include: { agentProfile: true },
     });
     if (!user) throw new NotFoundException('Utilisateur introuvable.');
+
+    const isOwner = requestingUser && requestingUser.id === targetUserId;
+    const isAdmin = requestingUser && requestingUser.role === Role.ADMIN;
+
+    if (!isOwner && !isAdmin && user.agentProfile) {
+      // Sanitize sensitive KYC data
+      return {
+        ...user,
+        agentProfile: {
+          id: user.agentProfile.id,
+          userId: user.agentProfile.userId,
+          status: user.agentProfile.status,
+          rating: user.agentProfile.rating,
+          trustScore: user.agentProfile.trustScore,
+          preferredZones: user.agentProfile.preferredZones,
+          // Mask CNI and MoMo number for privacy
+          cniNumber: '***',
+          momoNumber: '***',
+        },
+      };
+    }
+
     return user;
   }
 

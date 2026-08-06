@@ -8,8 +8,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get(':id')
-  async getProfile(@Param('id') id: string) {
-    return this.usersService.getProfile(id);
+  async getProfile(@Request() req: any, @Param('id') id: string) {
+    return this.usersService.getProfile(id, req.user);
   }
 
   @Post('apply-agent')

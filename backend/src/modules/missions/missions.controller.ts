@@ -16,11 +16,14 @@ export class MissionsController {
 
   @Get()
   async getMissions(
+    @Request() req: any,
     @Query('city') city?: City,
     @Query('category') category?: Category,
     @Query('status') status?: MissionStatus,
   ) {
-    return this.missionsService.findAll(city, category, status);
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    return this.missionsService.findAll(userId, role, city, category, status);
   }
 
   @Patch('milestones/:id/release')
