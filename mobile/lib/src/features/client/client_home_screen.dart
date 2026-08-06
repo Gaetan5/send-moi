@@ -163,69 +163,96 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Service Category selector
-            Row(
+            // Service Category Cards (Navigation vers NewRequestScreen Option B)
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.3,
               children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('🏗️ Supervision Chantier'),
-                    selected: selectedCategory == 'Supervision Chantier',
-                    selectedColor: const Color(0xFF7C3AED),
-                    onSelected: (_) => setState(() => selectedCategory = 'Supervision Chantier'),
+                _CategoryCard(
+                  icon: Icons.engineering,
+                  title: 'Supervision Chantier',
+                  subtitle: 'Photos/Vidéos géolocalisées',
+                  color: const Color(0xFF7C3AED),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewRequestScreen(category: 'SUPERVISION')),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('🛍️ Courses & Achats'),
-                    selected: selectedCategory == 'Courses & Achats',
-                    selectedColor: const Color(0xFF0D9488),
-                    onSelected: (_) => setState(() => selectedCategory = 'Courses & Achats'),
+                _CategoryCard(
+                  icon: Icons.shopping_cart,
+                  title: 'Courses & Achats',
+                  subtitle: 'Livraison contrôlée',
+                  color: const Color(0xFF0D9488),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewRequestScreen(category: 'COURSES')),
+                  ),
+                ),
+                _CategoryCard(
+                  icon: Icons.local_shipping,
+                  title: 'Livraison Colis',
+                  subtitle: 'Remise en main propre',
+                  color: const Color(0xFFD97706),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewRequestScreen(category: 'LIVRAISON')),
+                  ),
+                ),
+                _CategoryCard(
+                  icon: Icons.more_horiz,
+                  title: 'Autre Mission',
+                  subtitle: 'Traitement personnalisé',
+                  color: const Color(0xFF2563EB),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewRequestScreen(category: 'AUTRE')),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-            // Title Input
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: 'Titre de la mission',
-                hintText: selectedCategory == 'Supervision Chantier'
-                    ? 'Ex: Inspection coulage dalle Makepe'
-                    : 'Ex: Achat vivres marché Sandaga',
-                filled: true,
-                fillColor: const Color(0xFF141228),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
+class _CategoryCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
 
-            // Description Input
-            TextField(
-              controller: _descController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Instructions précises pour l\'agent',
-                hintText: 'Précisez l\'adresse exacte et les vérifications à effectuer...',
-                filled: true,
-                fillColor: const Color(0xFF141228),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 20),
+  const _CategoryCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
 
-            // Order CTA
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _submitEscrowOrder,
-                icon: const Icon(Icons.payment),
-                label: const Text('Valider & Bloquer les fonds (Séquestre)'),
-              ),
-            ),
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141228),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 2),
+            Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 10)),
           ],
         ),
       ),
