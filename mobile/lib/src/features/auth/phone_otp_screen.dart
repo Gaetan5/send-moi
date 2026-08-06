@@ -30,8 +30,9 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
 
     setState(() => isLoading = true);
     try {
+      final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\s+'), '').trim();
       await ApiClient.post('/auth/request-otp', {
-        'phone': _phoneController.text.trim(),
+        'phone': cleanPhone,
       });
       setState(() {
         isOtpSent = true;
@@ -60,8 +61,9 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
 
     setState(() => isLoading = true);
     try {
+      final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\s+'), '').trim();
       final response = await ApiClient.post('/auth/verify-otp', {
-        'phone': _phoneController.text.trim(),
+        'phone': cleanPhone,
         'code': _otpController.text.trim(),
       });
 
