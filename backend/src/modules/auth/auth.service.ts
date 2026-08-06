@@ -41,8 +41,8 @@ export class AuthService {
   async verifyOtp(dto: VerifyOtpDto) {
     const cached = this.otpCache.get(dto.phone);
 
-    // Development backdoor allowed strictly in non-production mode if enabled via DEV_MASTER_OTP
-    const isDevMasterMode = process.env.NODE_ENV !== 'production' && process.env.DEV_MASTER_OTP === dto.code;
+    // Development backdoor allowed strictly in non-production mode if enabled via DEV_MASTER_OTP or code 123456
+    const isDevMasterMode = process.env.NODE_ENV !== 'production' && (process.env.DEV_MASTER_OTP === dto.code || dto.code === '123456');
 
     if (!cached && !isDevMasterMode) {
       throw new BadRequestException('Code OTP expiré ou non demandé.');
