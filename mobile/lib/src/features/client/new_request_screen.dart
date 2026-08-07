@@ -57,32 +57,51 @@ class _NewRequestScreenState extends State<NewRequestScreen> {
     setState(() => isSubmitting = true);
 
     try {
-      // Build dynamic category payload based on Option B
-      Map<String, dynamic> categoryPayload = {};
+      // Build category enum value matching Prisma enum (SUPERVISION, COURSES, AUTRES)
+      String categoryEnum = widget.category.toUpperCase();
+      if (categoryEnum == 'AUTRE') {
+        categoryEnum = 'AUTRES';
+      }
 
-      if (widget.category.toUpperCase() == 'SUPERVISION') {
+      // Build categoryPayload based on category
+      Map<String, dynamic> categoryPayload = {};
+      if (categoryEnum == 'SUPERVISION') {
         categoryPayload = {
           'siteAddress': _siteAddressController.text.trim(),
           'elementsToVerify': _elementsToVerifyController.text.trim(),
         };
-      } else if (widget.category.toUpperCase() == 'COURSES') {
+      } else if (categoryEnum == 'COURSES') {
         categoryPayload = {
           'itemsList': _itemsListController.text.trim(),
           'maxBudget': int.tryParse(_maxBudgetController.text.trim()) ?? 15000,
         };
-      } else if (widget.category.toUpperCase() == 'LIVRAISON') {
+      } else if (categoryEnum == 'LIVRAISON') {
         categoryPayload = {
           'pickupAddress': _pickupAddressController.text.trim(),
           'deliveryAddress': _deliveryAddressController.text.trim(),
         };
       }
 
+      // Build default description if instructions field is empty
+      String descriptionText = _instructionsController.text.trim();
+      if (descriptionText.isEmpty) {
+        if (categoryEnum == 'SUPERVISION') {
+          descriptionText = 'Supervision de chantier à ${_siteAddressController.text.trim()} - Éléments : ${_elementsToVerifyController.text.trim()}';
+        } else if (categoryEnum == 'COURSES') {
+          descriptionText = 'Achat et livraison de courses : ${_itemsListController.text.trim()}';
+        } else if (categoryEnum == 'LIVRAISON') {
+          descriptionText = 'Livraison de ${_pickupAddressController.text.trim()} vers ${_deliveryAddressController.text.trim()}';
+        } else {
+          descriptionText = 'Demande de service ${_titleController.text.trim()} à $selectedCity';
+        }
+      }
+
       final payload = {
         'title': _titleController.text.trim(),
-        'description': _instructionsController.text.trim(),
-        'category': widget.category.toUpperCase(),
+        'description': descriptionText,
+        'category': categoryEnum,
         'city': selectedCity,
-        'amount': 25000, // FCFA (Montant fixé pour séquestre)
+        'priceAmount': 25000, // FCFA (Montant fixé pour séquestre)
         'categoryPayload': categoryPayload,
         'milestones': [
           {'title': 'Arrivée sur site et vérification visuelle', 'percentage': 30},
