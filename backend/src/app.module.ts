@@ -14,6 +14,7 @@ import { ProofsService } from './modules/proofs/proofs.service';
 import { RealtimeGateway } from './gateways/realtime.gateway';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { HealthController } from './modules/health/health.controller';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { HealthController } from './modules/health/health.controller';
     OrganizationsModule,
     StorageModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, AppController],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
