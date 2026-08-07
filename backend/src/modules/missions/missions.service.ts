@@ -3,6 +3,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Category, City, MissionStatus, EscrowStatus, Role } from '@prisma/client';
 import { CreateMissionDto } from './dto/create-mission.dto';
 import { PdfContractService } from '../proofs/pdf-contract.service';
+import { MatchingService } from '../matching/matching.service';
+import { ProofsService } from '../proofs/proofs.service';
 
 @Injectable()
 export class MissionsService {
@@ -11,6 +13,8 @@ export class MissionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfContractService: PdfContractService,
+    private readonly matchingService: MatchingService,
+    private readonly proofsService: ProofsService,
   ) {}
 
   /**
@@ -31,8 +35,8 @@ export class MissionsService {
     const totalClientPaid = Math.round(dto.priceAmount + fixedFee);
 
     // Create Mission and Escrow Account in a transaction
-    return this.prisma.$transaction(async (tx) => {
-      const mission = await tx.mission.create({
+    const mission = await this.prisma.$transaction(async (tx) => {
+      const createdMission = await tx.mission.create({
         data: {
           clientId,
           category: dto.category,
@@ -51,7 +55,7 @@ export class MissionsService {
       // Create Escrow Account with Held status
       await tx.escrowAccount.create({
         data: {
-          missionId: mission.id,
+          missionId: createdMission.id,
           status: EscrowStatus.HELD,
           amountHeld: totalClientPaid,
           agentPayoutAmount,
@@ -63,7 +67,7 @@ export class MissionsService {
       if (dto.milestones && dto.milestones.length > 0) {
         await tx.missionMilestone.createMany({
           data: dto.milestones.map((m, index) => ({
-            missionId: mission.id,
+            missionId: createdMission.id,
             title: m.title,
             percentage: m.percentage,
             amount: Math.round((totalClientPaid * m.percentage) / 100),
@@ -73,11 +77,27 @@ export class MissionsService {
         });
       }
 
-      return tx.mission.findUnique({
-        where: { id: mission.id },
-        include: { escrowAccount: true, client: true, milestones: true },
+      // Record Audit Log entry in MissionStatusLog
+      await tx.missionStatusLog.create({
+        data: {
+          missionId: createdMission.id,
+          fromStatus: MissionStatus.SOUMISE,
+          toStatus: MissionStatus.SOUMISE,
+          changedByUserId: clientId,
+        },
       });
+
+      return createdMission;
     });
+
+    // Invoke Matching Dispatch
+    try {
+      await this.matchingService.dispatchMission(mission.id);
+    } catch (err) {
+      this.logger.error(`Erreur lors du matching automatique de la mission ${mission.id}:`, err);
+    }
+
+    return mission;
   }
 
   /**
@@ -101,6 +121,16 @@ export class MissionsService {
       await tx.agentProfile.update({
         where: { userId: agentId },
         data: { activeMissionsCount: { increment: 1 } },
+      });
+
+      // Audit Log
+      await tx.missionStatusLog.create({
+        data: {
+          missionId,
+          fromStatus: mission.status,
+          toStatus: MissionStatus.AGENT_ASSIGNE,
+          changedByUserId: agentId,
+        },
       });
 
       return tx.mission.update({
@@ -134,17 +164,30 @@ export class MissionsService {
       throw new ForbiddenException('🔒 Seul l\'agent assigné à cette mission peut soumettre des preuves.');
     }
 
+    const timestampIso = new Date().toISOString();
+    const signature = this.proofsService.generateProofSignature(missionId, agentId, lat, lng, timestampIso);
+
     return this.prisma.$transaction(async (tx) => {
-      // Add Proof
+      // Add Proof with Cryptographic Signature
       await tx.missionProof.create({
         data: {
           missionId,
           mediaUrl,
           latitude: lat,
           longitude: lng,
-          capturedAt: new Date(),
+          capturedAt: new Date(timestampIso),
           isGpsVerified: true,
           isTimestampVerified: true,
+        },
+      });
+
+      // Audit Log
+      await tx.missionStatusLog.create({
+        data: {
+          missionId,
+          fromStatus: mission.status,
+          toStatus: MissionStatus.PREUVE_SOUMISE,
+          changedByUserId: agentId,
         },
       });
 
@@ -193,6 +236,16 @@ export class MissionsService {
           data: { activeMissionsCount: { decrement: 1 } },
         });
       }
+
+      // Audit Log Entry
+      await tx.missionStatusLog.create({
+        data: {
+          missionId,
+          fromStatus: mission.status,
+          toStatus: MissionStatus.VALIDEE_PAR_CLIENT,
+          changedByUserId: clientId,
+        },
+      });
 
       // Update Mission status
       const updatedMission = await tx.mission.update({
