@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
 
 class AgentKycScreen extends StatefulWidget {
   const AgentKycScreen({super.key});
@@ -13,6 +14,7 @@ class _AgentKycScreenState extends State<AgentKycScreen> {
   final _momoController = TextEditingController(text: '+237 699 00 11 22');
   String selectedCity = 'Douala';
   String selectedProvider = 'MTN Mobile Money';
+  bool isSubmitting = false;
 
   @override
   void dispose() {
@@ -22,21 +24,44 @@ class _AgentKycScreenState extends State<AgentKycScreen> {
     super.dispose();
   }
 
-  void _submitApplication() {
-    if (_cniController.text.isEmpty) {
+  Future<void> _submitApplication() async {
+    if (_cniController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez saisir votre numéro de CNI')),
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Color(0xFF16A34A),
-        content: Text('🎉 Dossier KYC soumis avec succès ! Examen par l\'équipe sous 48h.'),
-      ),
-    );
-    Navigator.pop(context);
+    setState(() => isSubmitting = true);
+
+    try {
+      final payload = {
+        'cniNumber': _cniController.text.trim(),
+        'momoNumber': _momoController.text.trim(),
+        'preferredZones': _zonesController.text.split(',').map((z) => z.trim()).toList(),
+      };
+
+      await ApiClient.post('/users/apply-agent', payload);
+
+      setState(() => isSubmitting = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF16A34A),
+            content: Text('🎉 Dossier KYC soumis avec succès ! Examen par l\'équipe sous 48h.'),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() => isSubmitting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override

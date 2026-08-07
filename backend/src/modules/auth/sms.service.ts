@@ -53,13 +53,13 @@ export class SmsService {
       }
     }
 
-    // 2. Fallback mode for development/testing
+    // 2. Fallback mode for development/testing only
     if (process.env.NODE_ENV === 'development') {
       this.logger.log(`ℹ️ [SMS Provider] Mode simulation développement actif pour ${phone}.`);
-    } else {
-      this.logger.warn(`⚠️ [SMS Provider] Aucune clé API SMS configurée en environnement non-dev.`);
+      return true;
     }
 
-    return true;
+    this.logger.error(`❌ [SMS Provider] Clé API SMS absente en environnement non-dev. Envoi annulé.`);
+    return false;
   }
 }

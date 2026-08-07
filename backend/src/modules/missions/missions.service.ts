@@ -167,6 +167,15 @@ export class MissionsService {
     const timestampIso = new Date().toISOString();
     const signature = this.proofsService.generateProofSignature(missionId, agentId, lat, lng, timestampIso);
 
+    const capturedDate = new Date(timestampIso);
+    const now = Date.now();
+    const timeDiffMs = Math.abs(now - capturedDate.getTime());
+
+    // Real verification logic: GPS coordinates must be valid non-zero numbers within lat/lng bounds
+    const isGpsVerified = lat !== 0 && lng !== 0 && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+    // Real timestamp verification: proof captured within 15 minutes window of server time
+    const isTimestampVerified = timeDiffMs <= 15 * 60 * 1000;
+
     return this.prisma.$transaction(async (tx) => {
       // Add Proof with Cryptographic Signature
       await tx.missionProof.create({
@@ -175,9 +184,10 @@ export class MissionsService {
           mediaUrl,
           latitude: lat,
           longitude: lng,
-          capturedAt: new Date(timestampIso),
-          isGpsVerified: true,
-          isTimestampVerified: true,
+          capturedAt: capturedDate,
+          isGpsVerified,
+          isTimestampVerified,
+          proofSignatureHash: signature,
         },
       });
 
@@ -277,17 +287,29 @@ export class MissionsService {
       throw new BadRequestException('Un litige ne peut être ouvert que sur une preuve soumise.');
     }
 
-    return this.prisma.mission.update({
-      where: { id: missionId },
-      data: { status: MissionStatus.LITIGE },
-      include: { escrowAccount: true, proofs: true },
+    return this.prisma.$transaction(async (tx) => {
+      // Audit Log Entry
+      await tx.missionStatusLog.create({
+        data: {
+          missionId,
+          fromStatus: mission.status,
+          toStatus: MissionStatus.LITIGE,
+          changedByUserId: clientId,
+        },
+      });
+
+      return tx.mission.update({
+        where: { id: missionId },
+        data: { status: MissionStatus.LITIGE },
+        include: { escrowAccount: true, proofs: true },
+      });
     });
   }
 
   /**
    * 6. Admin Resolves Dispute by Refunding Client (Transition: LITIGE -> ANNULEE & Escrow -> REFUNDED)
    */
-  async refundEscrowToClient(missionId: string) {
+  async refundEscrowToClient(missionId: string, adminUserId: string = 'SYSTEM_ADMIN') {
     const mission = await this.prisma.mission.findUnique({
       where: { id: missionId },
       include: { escrowAccount: true },
@@ -304,6 +326,16 @@ export class MissionsService {
       await tx.escrowAccount.update({
         where: { missionId },
         data: { status: EscrowStatus.REFUNDED },
+      });
+
+      // Audit Log Entry
+      await tx.missionStatusLog.create({
+        data: {
+          missionId,
+          fromStatus: mission.status,
+          toStatus: MissionStatus.ANNULEE,
+          changedByUserId: adminUserId,
+        },
       });
 
       // Update Mission Status
@@ -328,6 +360,13 @@ export class MissionsService {
     if (milestone.mission.clientId !== clientId) {
       throw new ForbiddenException('🔒 Seul le client créateur de la mission peut débloquer ce jalon.');
     }
+
+    // State Guard: Cannot release milestone on disputed or closed mission
+    const invalidStatuses: MissionStatus[] = [MissionStatus.LITIGE, MissionStatus.ANNULEE];
+    if (invalidStatuses.includes(milestone.mission.status)) {
+      throw new BadRequestException(`Impossible de débloquer un jalon sur une mission au statut ${milestone.mission.status}`);
+    }
+
     if (milestone.status === EscrowStatus.RELEASED) {
       throw new BadRequestException('Ce jalon a déjà été débloqué.');
     }

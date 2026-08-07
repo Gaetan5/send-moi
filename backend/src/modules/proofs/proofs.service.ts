@@ -4,7 +4,14 @@ import * as crypto from 'crypto';
 @Injectable()
 export class ProofsService {
   private readonly logger = new Logger(ProofsService.name);
-  private readonly secretKey = process.env.JWT_SECRET || 'send_moi_secret_key_2026';
+
+  private get secretKey(): string {
+    const key = process.env.JWT_SECRET;
+    if (!key) {
+      throw new Error('CRITICAL: Variable JWT_SECRET non configurée en environnement.');
+    }
+    return key;
+  }
 
   /**
    * Generate an unforgeable cryptographic SHA-256 signature for a mission proof
