@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MissionsService } from './missions.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PdfContractService } from '../proofs/pdf-contract.service';
+import { MatchingService } from '../matching/matching.service';
+import { ProofsService } from '../proofs/proofs.service';
 import { Category, City, MissionStatus, EscrowStatus } from '@prisma/client';
 
 describe('MissionsService', () => {
@@ -26,6 +28,9 @@ describe('MissionsService', () => {
     missionMilestone: {
       createMany: jest.fn(),
     },
+    missionStatusLog: {
+      create: jest.fn(),
+    },
   };
 
   const mockPdfContractService = {
@@ -35,12 +40,24 @@ describe('MissionsService', () => {
     }),
   };
 
+  const mockMatchingService = {
+    dispatchMission: jest.fn().mockResolvedValue(null),
+    findEligibleAgents: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockProofsService = {
+    generateProofSignature: jest.fn().mockReturnValue('mock-sha256-signature'),
+    verifyProofSignature: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MissionsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: PdfContractService, useValue: mockPdfContractService },
+        { provide: MatchingService, useValue: mockMatchingService },
+        { provide: ProofsService, useValue: mockProofsService },
       ],
     }).compile();
 
