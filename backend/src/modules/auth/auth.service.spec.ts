@@ -4,8 +4,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { SmsService } from './sms.service';
 import { BadRequestException } from '@nestjs/common';
+import { Role } from '@prisma/client';
 
-describe('AuthService', () => {
+describe('AuthService (Security & Penetration Testing)', () => {
   let service: AuthService;
 
   const mockPrismaService = {
@@ -18,7 +19,7 @@ describe('AuthService', () => {
   };
 
   const mockJwtService = {
-    sign: jest.fn().mockReturnValue('mock-jwt-token-123'),
+    sign: jest.fn().mockReturnValue('jwt-token-sec-999'),
   };
 
   const mockSmsService = {
@@ -26,6 +27,10 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    process.env.NODE_ENV = 'development';
+    delete process.env.DEV_MASTER_OTP;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -38,32 +43,103 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  it('devrait être défini', () => {
-    expect(service).toBeDefined();
+  describe('requestOtp & SMS Pipeline', () => {
+    it('devrait générer un OTP 6 chiffres et demander l\'expédition SMS', async () => {
+      const res = await service.requestOtp({ phone: '+237699001122' });
+      expect(res.phone).toBe('+237699001122');
+      expect(mockSmsService.sendSmsOtp).toHaveBeenCalledWith('+237699001122', expect.stringMatching(/^\d{6}$/));
+    });
+
+    it('devrait bloquer et lever BadRequestException en cas d\'échec de l\'API SMS', async () => {
+      mockSmsService.sendSmsOtp.mockResolvedValueOnce(false);
+      await expect(service.requestOtp({ phone: '+237699001122' })).rejects.toThrow(BadRequestException);
+    });
   });
 
-  it('devrait envoyer un OTP par SMS avec succès', async () => {
-    const result = await service.requestOtp({ phone: '+237699001122' });
-    expect(result.message).toContain('succès');
-    expect(mockSmsService.sendSmsOtp).toHaveBeenCalled();
+  describe('verifyOtp Security Controls', () => {
+    it('devrait valider l\'OTP correct et délivrer un jeton JWT', async () => {
+      await service.requestOtp({ phone: '+237699001122' });
+      const generatedCode = mockSmsService.sendSmsOtp.mock.calls[0][1];
+
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'u-1',
+        phone: '+237699001122',
+        role: Role.CLIENT,
+      });
+
+      const authRes = await service.verifyOtp({ phone: '+237699001122', code: generatedCode });
+      expect(authRes.accessToken).toBe('jwt-token-sec-999');
+      expect(authRes.user.phone).toBe('+237699001122');
+    });
+
+    it('devrait rejeter un OTP incorrect (Tentative de Brute Force)', async () => {
+      await service.requestOtp({ phone: '+237699001122' });
+      await expect(service.verifyOtp({ phone: '+237699001122', code: '000000' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('devrait interdire le code backdoor hardcodé 123456', async () => {
+      await service.requestOtp({ phone: '+237699001122' });
+      await expect(service.verifyOtp({ phone: '+237699001122', code: '123456' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('devrait autoriser DEV_MASTER_OTP uniquement en mode non-production si configuré', async () => {
+      process.env.NODE_ENV = 'development';
+      process.env.DEV_MASTER_OTP = '999888';
+
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'u-dev',
+        phone: '+237699001122',
+        role: Role.CLIENT,
+      });
+
+      const res = await service.verifyOtp({ phone: '+237699001122', code: '999888' });
+      expect(res.accessToken).toBeDefined();
+    });
+
+    it('devrait REFUSER DEV_MASTER_OTP en environnement de production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.DEV_MASTER_OTP = '999888';
+
+      await expect(service.verifyOtp({ phone: '+237699001122', code: '999888' })).rejects.toThrow(BadRequestException);
+    });
   });
 
-  it('devrait lever une exception si l\'envoi du SMS échoue', async () => {
-    mockSmsService.sendSmsOtp.mockResolvedValueOnce(false);
-    await expect(service.requestOtp({ phone: '+237699001122' })).rejects.toThrow(BadRequestException);
-  });
+  describe('googleAuth Account Hijacking Protections', () => {
+    it('devrait exiger un googleId non vide', async () => {
+      await expect(service.googleAuth({ googleId: '', email: 'test@sendmoi.cm', fullName: 'Test User' })).rejects.toThrow(BadRequestException);
+    });
 
-  it('devrait refuser une connexion Google qui usurpe un email existant sans googleId', async () => {
-    mockPrismaService.user.findUnique
-      .mockResolvedValueOnce(null) // no user by googleId
-      .mockResolvedValueOnce({ id: 'existing-user-id', email: 'test@sendmoi.cm', googleId: null }); // email exists without googleId
+    it('devrait créer un nouvel utilisateur Google si aucun conflit n\'existe', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValueOnce({
+        id: 'g-user-1',
+        googleId: 'g-12345',
+        email: 'new@sendmoi.cm',
+        fullName: 'Jean Google',
+        role: Role.CLIENT,
+      });
 
-    await expect(
-      service.googleAuth({
-        googleId: 'new-google-id',
-        email: 'test@sendmoi.cm',
-        fullName: 'Test User',
-      }),
-    ).rejects.toThrow(BadRequestException);
+      const res = await service.googleAuth({
+        googleId: 'g-12345',
+        email: 'new@sendmoi.cm',
+        fullName: 'Jean Google',
+      });
+
+      expect(res.user.email).toBe('new@sendmoi.cm');
+    });
+
+    it('devrait bloquer la liaison automatique par email pour prévenir l\'usurpation de compte existant sans Google ID', async () => {
+      mockPrismaService.user.findUnique
+        .mockResolvedValueOnce(null) // no user by googleId
+        .mockResolvedValueOnce({ id: 'victim-id', email: 'victime@sendmoi.cm', googleId: null }); // existing account without googleId
+
+      await expect(
+        service.googleAuth({
+          googleId: 'attacker-google-id',
+          email: 'victime@sendmoi.cm',
+          fullName: 'Attaquant',
+        }),
+      ).rejects.toThrow('Un compte existe déjà avec cet email.');
+    });
   });
 });

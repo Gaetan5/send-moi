@@ -3,8 +3,9 @@ import { PaymentsService } from './payments.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MomoApiService } from './momo-api.service';
 import { PaymentProvider, TransactionStatus } from '@prisma/client';
+import { NotFoundException } from '@nestjs/common';
 
-describe('PaymentsService', () => {
+describe('PaymentsService (Mobile Money & Escrow Settlement)', () => {
   let service: PaymentsService;
 
   const mockPrismaService = {
@@ -28,6 +29,7 @@ describe('PaymentsService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
@@ -43,29 +45,43 @@ describe('PaymentsService', () => {
     expect(service).toBeDefined();
   });
 
-  it('devrait traiter les webhooks Mobile Money de confirmation', async () => {
-    mockPrismaService.paymentTransaction.findUnique.mockResolvedValue({
-      id: 'tx-uuid-1',
-      reference: 'REF-123',
-      status: TransactionStatus.PENDING,
-      missionId: 'mission-uuid-1',
+  describe('handleMobileMoneyWebhook Security & State Update', () => {
+    it('devrait lever une exception si la transaction n\'existe pas en base', async () => {
+      mockPrismaService.paymentTransaction.findUnique.mockResolvedValueOnce(null);
+      await expect(
+        service.handleMobileMoneyWebhook('REF-999', PaymentProvider.MTN_MOMO, TransactionStatus.SUCCESS, {}),
+      ).rejects.toThrow(NotFoundException);
     });
 
-    mockPrismaService.paymentTransaction.update.mockResolvedValue({
-      id: 'tx-uuid-1',
-      reference: 'REF-123',
-      status: TransactionStatus.SUCCESS,
-      missionId: 'mission-uuid-1',
+    it('devrait mettre à jour la transaction et débloquer le séquestre lors de la confirmation du webhook', async () => {
+      mockPrismaService.paymentTransaction.findUnique.mockResolvedValueOnce({
+        id: 'tx-uuid-1',
+        reference: 'REF-123',
+        status: TransactionStatus.PENDING,
+        missionId: 'mission-uuid-1',
+      });
+
+      mockPrismaService.paymentTransaction.update.mockResolvedValueOnce({
+        id: 'tx-uuid-1',
+        reference: 'REF-123',
+        status: TransactionStatus.SUCCESS,
+        missionId: 'mission-uuid-1',
+      });
+
+      const result = await service.handleMobileMoneyWebhook(
+        'REF-123',
+        PaymentProvider.MTN_MOMO,
+        TransactionStatus.SUCCESS,
+        { amount: 25000 },
+      );
+
+      expect(result.status).toBe(TransactionStatus.SUCCESS);
+      expect(mockPrismaService.paymentTransaction.update).toHaveBeenCalledWith({
+        where: { reference: 'REF-123' },
+        data: expect.objectContaining({
+          status: TransactionStatus.SUCCESS,
+        }),
+      });
     });
-
-    const result = await service.handleMobileMoneyWebhook(
-      'REF-123',
-      PaymentProvider.MTN_MOMO,
-      TransactionStatus.SUCCESS,
-      { amount: 25000 },
-    );
-
-    expect(result.status).toBe(TransactionStatus.SUCCESS);
-    expect(mockPrismaService.paymentTransaction.update).toHaveBeenCalled();
   });
 });

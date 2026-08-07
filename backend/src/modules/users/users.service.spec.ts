@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
-describe('UsersService', () => {
+describe('UsersService (IDOR Protection & KYC Privacy)', () => {
   let service: UsersService;
 
   const mockPrismaService = {
@@ -18,11 +18,12 @@ describe('UsersService', () => {
       update: jest.fn(),
     },
     mission: {
-      count: jest.fn().mockResolvedValue(5),
+      count: jest.fn(),
     },
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
@@ -37,28 +38,90 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
-  it('devrait lever une exception si l\'utilisateur est introuvable', async () => {
-    mockPrismaService.user.findUnique.mockResolvedValue(null);
-    await expect(service.getProfile('invalid-id', { id: 'caller-id', role: Role.CLIENT })).rejects.toThrow(
-      NotFoundException,
-    );
-  });
-
-  it('devrait anonymiser les données sensibles KYC si l\'appelant n\'est ni propriétaire ni admin', async () => {
-    mockPrismaService.user.findUnique.mockResolvedValue({
-      id: 'target-id',
-      fullName: 'Agent Douala',
-      role: Role.AGENT,
-      agentProfile: {
-        cniNumber: '118293849',
-        momoNumber: '+237699001122',
-        status: 'APPROVED',
-      },
+  describe('getProfile Privacy Controls (Anti-IDOR)', () => {
+    it('devrait lever une exception si l\'utilisateur cible n\'existe pas', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce(null);
+      await expect(service.getProfile('invalid-id', { id: 'caller-id', role: Role.CLIENT })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
-    const result = await service.getProfile('target-id', { id: 'other-user-id', role: Role.CLIENT });
+    it('devrait anonymiser les numéros CNI et MoMo pour un utilisateur tierce partie non administrateur', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'agent-1',
+        fullName: 'Agent Douala',
+        role: Role.AGENT,
+        agentProfile: {
+          cniNumber: '118293849',
+          momoNumber: '+237699001122',
+          status: 'APPROVED',
+          trustScore: 85.0,
+        },
+      });
 
-    expect(result.agentProfile.cniNumber).toContain('***');
-    expect(result.agentProfile.momoNumber).toContain('***');
+      mockPrismaService.agentProfile.findUnique.mockResolvedValueOnce({
+        status: 'APPROVED',
+        trustScore: 85.0,
+      });
+
+      mockPrismaService.mission.count.mockResolvedValue(10);
+
+      const result = await service.getProfile('agent-1', { id: 'other-user-client', role: Role.CLIENT });
+
+      expect(result.agentProfile.cniNumber).toBe('*****3849');
+      expect(result.agentProfile.momoNumber).toBe('*****1122');
+    });
+
+    it('devrait afficher les données CNI et MoMo en clair pour le propriétaire du compte', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'agent-owner',
+        fullName: 'Agent Douala',
+        role: Role.AGENT,
+        agentProfile: {
+          cniNumber: '118293849',
+          momoNumber: '+237699001122',
+          status: 'APPROVED',
+          trustScore: 85.0,
+        },
+      });
+
+      mockPrismaService.agentProfile.findUnique.mockResolvedValueOnce({
+        status: 'APPROVED',
+        trustScore: 85.0,
+      });
+
+      mockPrismaService.mission.count.mockResolvedValue(10);
+
+      const result = await service.getProfile('agent-owner', { id: 'agent-owner', role: Role.AGENT });
+
+      expect(result.agentProfile.cniNumber).toBe('118293849');
+      expect(result.agentProfile.momoNumber).toBe('+237699001122');
+    });
+  });
+
+  describe('applyAsAgent KYC Validation', () => {
+    it('devrait créer/mettre à jour un profil agent au statut PENDING', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({ id: 'user-1', role: Role.CLIENT });
+      mockPrismaService.agentProfile.upsert.mockResolvedValueOnce({
+        id: 'prof-1',
+        userId: 'user-1',
+        cniNumber: '118293849',
+        status: 'PENDING',
+      });
+
+      const res = await service.applyAsAgent({
+        userId: 'user-1',
+        cniNumber: '118293849',
+        momoNumber: '+237699001122',
+        momoProvider: 'MTN_MOMO' as any,
+        preferredZones: ['Akwa'],
+      });
+
+      expect(res.status).toBe('PENDING');
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { role: Role.AGENT },
+      });
+    });
   });
 });

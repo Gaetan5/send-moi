@@ -92,9 +92,9 @@ export class UsersService {
           rating: user.agentProfile.rating,
           trustScore: trustScore,
           preferredZones: user.agentProfile.preferredZones,
-          // Mask CNI and MoMo number for privacy
-          cniNumber: '***',
-          momoNumber: '***',
+          // Mask CNI and MoMo number for privacy preserving the last 4 digits
+          cniNumber: user.agentProfile.cniNumber ? `*****${user.agentProfile.cniNumber.slice(-4)}` : '***',
+          momoNumber: user.agentProfile.momoNumber ? `*****${user.agentProfile.momoNumber.slice(-4)}` : '***',
         },
       };
     }

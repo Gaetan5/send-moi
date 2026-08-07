@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentProvider, TransactionType, TransactionStatus, EscrowStatus } from '@prisma/client';
 
@@ -26,7 +26,7 @@ export class PaymentsService {
 
     if (!transaction) {
       this.logger.error(`Transaction non trouvée pour référence ${reference}`);
-      return null;
+      throw new NotFoundException(`Transaction non trouvée pour la référence ${reference}`);
     }
 
     // Verify Amount Match if payload contains amount
